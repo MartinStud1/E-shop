@@ -1,10 +1,18 @@
 from flask import Flask, render_template
+import requests
 
 app = Flask(__name__)
 
+
+response = requests.get('https://dummyjson.com/products?limit=6')
+      
+data = response.json()
+     
+products = data.get('products', [])
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', products = products)
 
 @app.route("/home-02")
 def home_02():
