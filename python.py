@@ -1,18 +1,76 @@
 from flask import Flask, render_template
 import requests
+import random
+
+women_categories = [
+  "womens-bags",
+  "womens-dresses",
+  "womens-jewellery",
+  "womens-shoes",
+  "womens-watches"
+]
+
+men_categories = [
+  "mens-shirts",
+  "mens-shoes",
+  "mens-watches",
+]
+
+
+def get_products_from_category(category):
+    url = f'https://dummyjson.com/products/category/{category}'
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data.get('products', [])
+    else:
+        return []
+
+def get_all_products_from_categories(categories):
+    all_products = []
+    for category in categories:
+        products = get_products_from_category(category)
+        all_products = all_products + products
+    return all_products
+
+
+all_women_products = get_all_products_from_categories(women_categories)
+random_women_products = random.sample(all_women_products, min(4, len(all_women_products)))
+
+all_men_products = get_all_products_from_categories(men_categories)
+random_men_products = random.sample(all_men_products, min(4, len(all_men_products)))
+
+sports_products = get_products_from_category("sports-accessories")
+random_sports_products = random.sample(sports_products, min(4, len(sports_products)))
+
+for p in random_women_products:
+    p["group"] = "women"
+
+for p in random_men_products:
+    p["group"] = "men"
+
+for p in random_sports_products:
+    p["group"] = "sports"
+
+
+all_random_products = random_women_products + random_men_products + random_sports_products
+random.shuffle(all_random_products)
+
+for product in random_women_products:
+    print(product["id"])
+print("Počet produktů ve všech women kategoriích:", len(all_women_products))
+print("Počet produktů ve všech women kategoriích:", len(all_men_products))
+
+
+#def get_random_products(categories, count):
+
 
 app = Flask(__name__)
 
-
-response = requests.get('https://dummyjson.com/products?limit=6')
-      
-data = response.json()
-     
-products = data.get('products', [])
-
 @app.route('/')
 def index():
-    return render_template('index.html', products = products)
+    return render_template('index.html', products = all_random_products)
 
 @app.route("/home-02")
 def home_02():
