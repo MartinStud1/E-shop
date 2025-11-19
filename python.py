@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 import requests
 import random
 
@@ -15,6 +15,7 @@ men_categories = [
   "mens-shoes",
   "mens-watches",
 ]
+
 
 
 def get_products_from_category(category):
@@ -45,14 +46,23 @@ sports_products = get_products_from_category("sports-accessories")
 random_sports_products = random.sample(sports_products, min(4, len(sports_products)))
 
 for p in random_women_products:
-    p["group"] = "women"
+    p["rndgroup"] = "women"
 
 for p in random_men_products:
-    p["group"] = "men"
+    p["rndgroup"] = "men"
 
 for p in random_sports_products:
-    p["group"] = "sports"
+    p["rndgroup"] = "sports"
 
+
+for p in all_women_products:
+    p["group"] = "women"
+
+for p in all_men_products:
+    p["group"] = "men"
+
+for p in sports_products:
+    p["group"] = "sports"
 
 all_random_products = random_women_products + random_men_products + random_sports_products
 random.shuffle(all_random_products)
@@ -63,14 +73,48 @@ print("Počet produktů ve všech women kategoriích:", len(all_women_products))
 print("Počet produktů ve všech women kategoriích:", len(all_men_products))
 
 
-#def get_random_products(categories, count):
+all_products = all_men_products + all_women_products + sports_products
 
+all_products = all_men_products + all_women_products + sports_products
+
+for product in all_products:
+    product_id = product.get('id', 'neznámé ID')
+    title = product.get('title', 'Bez názvu')
+    images = product.get('images', [])
+    print(f"Produkt ID {product_id} ('{title}') má {len(images)} obrázků.")
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
     return render_template('index.html', products = all_random_products)
+
+
+
+@app.route('/api/product/<int:product_id>')
+def get_product(product_id):
+    # Volání DummyJSON API
+    api_url = f"https://dummyjson.com/products/{product_id}"
+    response = requests.get(api_url)
+
+    if response.status_code != 200:
+        return jsonify({"error": "Produkt nenalezen"}), 404
+
+    data = response.json()
+
+    # Vytvoření výsledného JSONu
+    product = {
+        "id": data.get("id"),
+        "title": data.get("title"),
+        "price": data.get("price"),
+        "description": data.get("description"),
+        "images": data.get("images", []),             # pole URL obrázků
+        "num_images": len(data.get("images", []))    # počet obrázků
+    }
+
+    return jsonify(product)
+
+
 
 @app.route("/home-02")
 def home_02():
@@ -98,7 +142,8 @@ def contact():
 
 @app.route('/product')
 def product():
-    return render_template('product.html')
+    random.shuffle(all_products)
+    return render_template('product.html', products = all_products)
 
 @app.route('/product-detail')
 def product_detail():
