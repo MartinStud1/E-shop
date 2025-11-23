@@ -66,22 +66,9 @@ for p in sports_products:
 
 all_random_products = random_women_products + random_men_products + random_sports_products
 random.shuffle(all_random_products)
-
-for product in random_women_products:
-    print(product["id"])
-print("Počet produktů ve všech women kategoriích:", len(all_women_products))
-print("Počet produktů ve všech women kategoriích:", len(all_men_products))
-
+all_random_products = [p for p in all_random_products if p.get("thumbnail")]
 
 all_products = all_men_products + all_women_products + sports_products
-
-all_products = all_men_products + all_women_products + sports_products
-
-for product in all_products:
-    product_id = product.get('id', 'neznámé ID')
-    title = product.get('title', 'Bez názvu')
-    images = product.get('images', [])
-    print(f"Produkt ID {product_id} ('{title}') má {len(images)} obrázků.")
 
 app = Flask(__name__)
 
@@ -89,30 +76,6 @@ app = Flask(__name__)
 def index():
     return render_template('index.html', products = all_random_products)
 
-
-
-@app.route('/api/product/<int:product_id>')
-def get_product(product_id):
-    # Volání DummyJSON API
-    api_url = f"https://dummyjson.com/products/{product_id}"
-    response = requests.get(api_url)
-
-    if response.status_code != 200:
-        return jsonify({"error": "Produkt nenalezen"}), 404
-
-    data = response.json()
-
-    # Vytvoření výsledného JSONu
-    product = {
-        "id": data.get("id"),
-        "title": data.get("title"),
-        "price": data.get("price"),
-        "description": data.get("description"),
-        "images": data.get("images", []),             # pole URL obrázků
-        "num_images": len(data.get("images", []))    # počet obrázků
-    }
-
-    return jsonify(product)
 
 
 
