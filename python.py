@@ -56,13 +56,13 @@ for p in random_sports_products:
 
 
 for p in all_women_products:
-    p["group"] = "women"
+    p["group"] = "allwomen"
 
 for p in all_men_products:
-    p["group"] = "men"
+    p["group"] = "allmen"
 
 for p in sports_products:
-    p["group"] = "sports"
+    p["group"] = "allsports"
 
 all_random_products = random_women_products + random_men_products + random_sports_products
 random.shuffle(all_random_products)
