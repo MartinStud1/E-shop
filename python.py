@@ -13,15 +13,34 @@ women_categories = [
 men_categories = [
   "mens-shirts",
   "mens-shoes",
-  "mens-watches",
+  "mens-watches"
 ]
+
+tags = [
+    "elegance",
+    "energy",
+    "city",
+    "urban",
+    "activity",
+    "summer"
+]
+
+
+def get_posts_by_tags(tag):
+    url = f"https://dummyjson.com/posts/tag/{tag}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        return response.json().get("posts", [])
+    return []
+
+
 
 
 
 def get_products_from_category(category):
     url = f'https://dummyjson.com/products/category/{category}'
     response = requests.get(url)
-
     if response.status_code == 200:
         data = response.json()
         return data.get('products', [])
@@ -77,8 +96,6 @@ def index():
     return render_template('index.html', products = all_random_products)
 
 
-
-
 @app.route("/home-02")
 def home_02():
     return render_template("home-02.html")
@@ -93,11 +110,36 @@ def about():
 
 @app.route('/blog')
 def blog():
-    return render_template('blog.html')
+    # slovník pro unikátní články podle id
+    unique_posts = {}
 
-@app.route('/blog-detail')
-def blog_detail():
-    return render_template('blog-detail.html')
+    for tag in tags:
+        posts = get_posts_by_tags(tag)
+        for post in posts:
+        # pokud ještě tento id nemáme, přidáme
+            if post['id'] not in unique_posts:
+                unique_posts[post['id']] = post
+
+    # převod na seznam unikátních článků
+    final_posts = list(unique_posts.values())
+    final_posts = random.sample(final_posts, min(len(final_posts), 5))
+    return render_template('blog.html', posts = final_posts)
+
+@app.route('/blog/<int:post_id>')
+def blog_detail(post_id):
+    # Procházíme všechny tagy a hledáme post podle id
+    unique_posts = {}
+    for tag in tags:
+        posts = get_posts_by_tags(tag)
+        for post in posts:
+            if post['id'] not in unique_posts:
+                unique_posts[post['id']] = post
+
+    post = unique_posts.get(post_id)
+    if not post:
+        return "Post not found", 404
+
+    return render_template('blog-detail.html', post=post)
 
 @app.route('/contact')
 def contact():
