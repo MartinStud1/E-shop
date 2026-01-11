@@ -1,0 +1,40 @@
+/* Celý řádek košíku */
+.row {
+    display: flex;
+    flex-wrap: wrap; /* aby šlo na mobil přetočit pod sebe */
+    gap: 30px; /* mezera mezi levým a pravým boxem */
+}
+
+/* Levý box: tabulka */
+.col-xl-7, .col-lg-10 {
+    flex: 1 1 60%; /* levý box zabere cca 60% šířky */
+}
+
+/* Pravý box: Cart Totals */
+.col-xl-5, .col-lg-7 {
+    flex: 1 1 35%; /* pravý box cca 35% šířky */
+}
+
+/* Vnitřní padding pravého boxu */
+.bor10 {
+    padding: 30px 40px; /* necháme vnitřní prostor, aby nic nepřekrývalo */
+}
+
+/* Mobile breakpoint: pod sebou */
+@media (max-width: 992px) {
+    .col-xl-7, .col-xl-5,
+    .col-lg-10, .col-lg-7 {
+        flex: 1 1 100%;
+    }
+}
+/* Posun Remove sloupce od pravé hrany */
+.table-shopping-cart .column-6 {
+    text-align: center;
+    padding-right: 15px;  /* odsazení od pravého okraje */
+}
+
+/* Pokud chceš, můžeš zvětšit trochu i levý padding, aby křížek nebyl úplně u středu boxu */
+.table-shopping-cart .column-6 a {
+    display: inline-block;
+    padding: 0 5px;  /* horizontální prostor kolem ✕ */
+}

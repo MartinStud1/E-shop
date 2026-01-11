@@ -822,9 +822,9 @@
                                     </div>
                                 </div>
 
-                                <button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail">
-                                    Add to cart
-                                </button>
+                                <button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail"data-id="{{ product.id }}">
+									 Add to cart
+								</button>
                             </div>
                         </div>
                     </div>
@@ -1140,6 +1140,21 @@ document.querySelectorAll('.js-hide-modal1').forEach(btn => {
 document.querySelectorAll('.wrap-modal1').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === modal) modal.style.display = 'none';
+    });
+});
+</script>
+<script>
+	document.querySelectorAll('.js-addcart-detail').forEach(btn => {
+    btn.addEventListener('click', async e => {
+        const productId = btn.dataset.id;
+        const res = await fetch(`/add-to-cart/${productId}`, { method: 'POST' });
+        const data = await res.json();
+
+        if(data.success){
+            const badge = document.querySelector('.icon-header-noti');
+            if(badge) badge.setAttribute('data-notify', data.cart_quantity);
+            alert('Produkt přidán do košíku!');
+        }
     });
 });
 </script>

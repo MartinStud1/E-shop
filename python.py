@@ -1,6 +1,8 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, session, redirect, url_for, request
 import requests
 import random
+
+
 
 women_categories = [
   "womens-bags",
@@ -90,6 +92,7 @@ all_random_products = [p for p in all_random_products if p.get("thumbnail")]
 all_products = all_men_products + all_women_products + sports_products
 
 app = Flask(__name__)
+app.secret_key = "tajnyklic"
 
 @app.route('/')
 def index():
@@ -157,6 +160,63 @@ def product_detail():
 @app.route('/shopping-cart')
 def shopping_cart():
     return render_template('shopping-cart.html')
+
+@app.route('/add-to-cart/<int:product_id>', methods=['POST'])
+def add_to_cart(product_id):
+    product = next((p for p in all_products if p['id'] == product_id), None)
+    if not product:
+        return jsonify({"success": False, "message": "Produkt nenalezen"}), 404
+
+    cart = session.get('cart', [])
+
+    # Zkontrolovat, jestli už je v košíku
+    for item in cart:
+        if item['id'] == product_id:
+            item['quantity'] += 1
+            break
+    else:
+        cart.append({
+            "id": product['id'],
+            "title": product['title'],
+            "price": product['price'],
+            "quantity": 1,
+            "thumbnail": product['thumbnail']
+        })
+
+    session['cart'] = cart
+
+    return jsonify({
+        "success": True,
+        "cart_quantity": sum(i['quantity'] for i in cart)
+    })
+
+@app.route('/add-quantity/<int:product_id>', methods=['POST'])
+def add_quantity(product_id):
+    cart = session.get('cart', [])
+    for item in cart:
+        if item['id'] == product_id:
+            item['quantity'] += 1
+            break
+    session['cart'] = cart
+    return jsonify({"success": True, "quantity": item['quantity']})
+
+@app.route('/subtract-quantity/<int:product_id>', methods=['POST'])
+def subtract_quantity(product_id):
+    cart = session.get('cart', [])
+    for item in cart:
+        if item['id'] == product_id and item['quantity'] > 1:
+            item['quantity'] -= 1
+            break
+    session['cart'] = cart
+    return jsonify({"success": True, "quantity": item['quantity']})
+
+@app.route('/remove-from-cart/<int:product_id>')
+def remove_from_cart(product_id):
+    cart = session.get('cart', [])
+    cart = [item for item in cart if item['id'] != product_id]
+    session['cart'] = cart
+    return redirect(url_for('shopping_cart'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
