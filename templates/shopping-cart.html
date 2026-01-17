@@ -647,108 +647,80 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 </script>
 <!--přidáno:-->
 <script>
-// Přepočítá Total pro jeden řádek a celý cart
-function updateRowTotal(row){
-    const price = parseFloat(row.querySelector('.price').textContent);
-    const quantity = parseInt(row.querySelector('.num-product').value);
-    const total = (price * quantity).toFixed(2);
-    row.querySelector('.total').textContent = '$ ' + total;
-    updateCartTotals();
-}
-
-function updateCartTotals(){
-    let subtotal = 0;
-    document.querySelectorAll('.table_row').forEach(row => {
-        const price = parseFloat(row.querySelector('.price').textContent);
-        const quantity = parseInt(row.querySelector('.num-product').value);
-        subtotal += price * quantity;
+// ---------------------------
+// 1. Pomocná funkce pro aktualizaci bublin (data-notify)
+// ---------------------------
+function updateBadgeCount() {
+    let totalQuantity = 0;
+    document.querySelectorAll('.table_row .num-product').forEach(input => {
+        totalQuantity += parseInt(input.value);
     });
-    subtotal = subtotal.toFixed(2);
-    document.getElementById('cart-subtotal').textContent = '$ ' + subtotal;
-    document.getElementById('cart-total').textContent = '$ ' + subtotal;
-}
 
-// Plus button
-document.querySelectorAll('.btn-num-product-up').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const row = btn.closest('.table_row');
-        const input = row.querySelector('.num-product');
-        const id = row.dataset.id;
-
-        const res = await fetch(`/add-quantity/${id}`, { method: 'POST' });
-        const data = await res.json();
-        if(data.success){
-            input.value = data.quantity;
-            updateRowTotal(row);
+    const badges = document.querySelectorAll('.icon-header-noti');
+    badges.forEach(badge => {
+        // Aktualizujeme jen ty bubliny, které mají v sobě nákupní košík
+        if (badge.querySelector('.zmdi-shopping-cart')) {
+            badge.setAttribute('data-notify', totalQuantity);
         }
     });
-});
+}
 
-// Minus button
-document.querySelectorAll('.btn-num-product-down').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const row = btn.closest('.table_row');
-        const input = row.querySelector('.num-product');
-        const id = row.dataset.id;
-
-        const res = await fetch(`/subtract-quantity/${id}`, { method: 'POST' });
-        const data = await res.json();
-        if(data.success){
-            input.value = data.quantity;
-            updateRowTotal(row);
-        }
-    });
-});
-
-// Inicializace při načtení stránky
-updateCartTotals();
-</script>
-<script>
+// ---------------------------
+// 2. Přepočítání jednoho řádku + celého cart
+// ---------------------------
 function updateRowTotal(row){
-    const price = parseFloat(row.querySelector('.price').textContent);
+    // Očištění textu od symbolu $ pro výpočet
+    const priceText = row.querySelector('.price').textContent.replace('$', '').trim();
+    const price = parseFloat(priceText);
     const quantity = parseInt(row.querySelector('.num-product').value);
+    
     row.querySelector('.total').textContent = '$ ' + (price * quantity).toFixed(2);
 
     updateCartTotals();
     refreshMiniCartOptimized();
+    updateBadgeCount(); // Přidáno pro live update bubliny
 }
 
 function updateCartTotals(){
     let subtotal = 0;
     document.querySelectorAll('.table_row').forEach(row => {
-        const price = parseFloat(row.querySelector('.price').textContent);
+        const priceText = row.querySelector('.price').textContent.replace('$', '').trim();
+        const price = parseFloat(priceText);
         const quantity = parseInt(row.querySelector('.num-product').value);
         subtotal += price * quantity;
     });
-    subtotal = subtotal.toFixed(2);
-    document.getElementById('cart-subtotal').textContent = '$ ' + subtotal;
-    document.getElementById('cart-total').textContent = '$ ' + subtotal;
+    
+    const formattedTotal = '$ ' + subtotal.toFixed(2);
+    
+    const subtotalEl = document.getElementById('cart-subtotal');
+    const totalEl = document.getElementById('cart-total');
+    
+    if(subtotalEl) subtotalEl.textContent = formattedTotal;
+    if(totalEl) totalEl.textContent = formattedTotal;
 }
 
 // ---------------------------
-// MINI CART OPTIMALIZOVANÝ
+// 3. Mini cart live update
 // ---------------------------
 function refreshMiniCartOptimized() {
     let subtotal = 0;
+    const miniCartUl = document.querySelector('.header-cart-wrapitem');
+    if (!miniCartUl) return;
 
-    // Projdi všechny položky v hlavním košíku
     document.querySelectorAll('.table_row').forEach(row => {
         const id = row.dataset.id;
         const title = row.querySelector('.column-2').textContent;
         const img = row.querySelector('.how-itemcart1 img').src;
         const quantity = parseInt(row.querySelector('.num-product').value);
-        const price = parseFloat(row.querySelector('.price').textContent);
+        const priceText = row.querySelector('.price').textContent.replace('$', '').trim();
+        const price = parseFloat(priceText);
 
         subtotal += quantity * price;
 
         let li = document.querySelector(`.header-cart-item[data-id='${id}']`);
-
         if(li){
-            // Jen aktualizuj quantity a subtotal
             li.querySelector('.header-cart-item-info').textContent = `${quantity} x $${price.toFixed(2)}`;
         } else {
-            // Pokud ještě neexistuje (nový produkt)
-            const miniCartUl = document.querySelector('.header-cart-wrapitem');
             li = document.createElement('li');
             li.className = 'header-cart-item flex-w flex-t m-b-12';
             li.dataset.id = id;
@@ -757,75 +729,116 @@ function refreshMiniCartOptimized() {
                     <img src="${img}" alt="IMG">
                 </div>
                 <div class="header-cart-item-txt p-t-8">
-                    <a href="#" class="header-cart-item-name m-b-18 hov-cl1 trans-04">
-                        ${title}
-                    </a>
-                    <span class="header-cart-item-info">
-                        ${quantity} x $${price.toFixed(2)}
-                    </span>
+                    <a href="#" class="header-cart-item-name m-b-18 hov-cl1 trans-04">${title}</a>
+                    <span class="header-cart-item-info">${quantity} x $${price.toFixed(2)}</span>
                 </div>
                 <div class="header-cart-item-remove ml-auto">
                     <a href="#" class="text-danger remove-mini-cart" data-id="${id}">✕</a>
                 </div>`;
             miniCartUl.appendChild(li);
 
-            // Přidej event listener na remove
             li.querySelector('.remove-mini-cart').addEventListener('click', e => {
                 e.preventDefault();
-                const row = document.querySelector(`.table_row[data-id='${id}']`);
-                if(row) row.remove();
+                const mainRow = document.querySelector(`.table_row[data-id='${id}']`);
+                if(mainRow) mainRow.remove();
                 li.remove();
                 updateCartTotals();
                 refreshMiniCartOptimized();
+                updateBadgeCount();
             });
         }
     });
 
-    // Pokud je prázdný
+    // Kontrola prázdného košíku
     if(document.querySelectorAll('.table_row').length === 0){
-        const miniCartUl = document.querySelector('.header-cart-wrapitem');
         miniCartUl.innerHTML = '<li class="header-cart-item text-center">Košík je prázdný.</li>';
         subtotal = 0;
     }
 
-    document.getElementById('header-cart-total').textContent = 'Total: $' + subtotal.toFixed(2);
+    const headerTotalEl = document.getElementById('header-cart-total');
+    if(headerTotalEl) headerTotalEl.textContent = 'Total: $' + subtotal.toFixed(2);
 }
 
 // ---------------------------
-// EVENT LISTENERY PRO HLAVNÍ KOŠÍK
+// 4. Quantity plus / minus (AJAX)
 // ---------------------------
 document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
         const row = btn.closest('.table_row');
         const input = row.querySelector('.num-product');
-        let value = parseInt(input.value);
+        const id = row.dataset.id;
+        let res;
 
-        if(btn.classList.contains('btn-num-product-up')) value++;
-        else if(btn.classList.contains('btn-num-product-down') && value > 1) value--;
+        const url = btn.classList.contains('btn-num-product-up') 
+            ? `/add-quantity/${id}` 
+            : `/subtract-quantity/${id}`;
 
-        input.value = value;
-        updateRowTotal(row);
+        try {
+            res = await fetch(url, { method: 'POST' });
+            const data = await res.json();
+            if(data.success){
+                input.value = data.quantity;
+                updateRowTotal(row);
+            }
+        } catch (err) {
+            console.error("Chyba při aktualizaci množství:", err);
+        }
     });
 });
 
-// Remove z hlavního košíku
+// ---------------------------
+// 5. Remove button z hlavního košíku (OPRAVENO: AJAX na server)
+// ---------------------------
 document.querySelectorAll('.remove-from-cart-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-        e.preventDefault();
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault(); // Zabráníme obnovení stránky
+        
         const row = btn.closest('.table_row');
         const id = row.dataset.id;
-        row.remove();
-        const li = document.querySelector(`.header-cart-item[data-id='${id}']`);
-        if(li) li.remove();
-        updateCartTotals();
-        refreshMiniCartOptimized();
+        
+        // Zde voláme ten nový Python endpoint
+        try {
+            const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
+            const data = await res.json();
+            
+            if (data.success) {
+                // Smažeme řádek z tabulky před očima uživatele
+                row.remove();
+                
+                // Smažeme to i z toho malého bočního košíku (pokud tam je)
+                const li = document.querySelector(`.header-cart-item[data-id='${id}']`);
+                if(li) li.remove();
+                
+                // Přepočítáme ceny na stránce
+                updateCartTotals();
+                refreshMiniCartOptimized();
+                
+                // AKTUALIZUJEME BUBLINU s číslem (tohle ti chybělo!)
+                const badges = document.querySelectorAll('.icon-header-noti');
+                badges.forEach(badge => {
+                    if (badge.querySelector('.zmdi-shopping-cart')) {
+                        badge.setAttribute('data-notify', data.cart_quantity);
+                    }
+                });
+            }
+        } catch (err) {
+            console.error("Chyba při komunikaci se serverem:", err);
+        }
     });
 });
 
 // ---------------------------
-// Inicializace při načtení
+// Inicializace
 // ---------------------------
-refreshMiniCartOptimized();
+document.addEventListener('DOMContentLoaded', () => {
+    // Pro jistotu vyčistíme mini-košík před první synchronizací
+    const miniCartUl = document.querySelector('.header-cart-wrapitem');
+    if(miniCartUl) miniCartUl.innerHTML = '';
+    
+    refreshMiniCartOptimized();
+    updateCartTotals();
+    updateBadgeCount();
+});
 </script>
 <!--===============================================================================================-->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

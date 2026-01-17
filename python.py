@@ -94,6 +94,14 @@ all_products = all_men_products + all_women_products + sports_products
 app = Flask(__name__)
 app.secret_key = "tajnyklic"
 
+@app.context_processor
+def inject_cart_count():
+    cart = session.get('cart', [])
+    # Spočítáme kusy a hned je uložíme do session, aby byla data všude stejná
+    total = sum(item.get('quantity', 0) for item in cart)
+    session['cart_count'] = total
+    return dict(cart_count=total)
+
 @app.route('/')
 def index():
     return render_template('index.html', products = all_random_products)
@@ -185,30 +193,52 @@ def add_to_cart(product_id):
 
     session['cart'] = cart
 
+    # --- TADY JE TA OPRAVA ---
+    total_quantity = sum(i['quantity'] for i in cart)
+    session['cart'] = cart
+    session['cart_count'] = total_quantity  # Uložíme číslo pro šablonu
+    session.modified = True 
+
     return jsonify({
         "success": True,
-        "cart_quantity": sum(i['quantity'] for i in cart)
+        "cart_quantity": total_quantity
     })
 
 @app.route('/add-quantity/<int:product_id>', methods=['POST'])
 def add_quantity(product_id):
     cart = session.get('cart', [])
+    updated_qty = 0
     for item in cart:
         if item['id'] == product_id:
             item['quantity'] += 1
+            updated_qty = item['quantity']
             break
+    
+    # KLÍČOVÝ KROK: Přepočet pro Index a ostatní stránky
+    total_qty = sum(i.get('quantity', 0) for i in cart)
     session['cart'] = cart
-    return jsonify({"success": True, "quantity": item['quantity']})
+    session['cart_count'] = total_qty  
+    session.modified = True
+    
+    return jsonify({"success": True, "quantity": updated_qty, "cart_quantity": total_qty})
 
 @app.route('/subtract-quantity/<int:product_id>', methods=['POST'])
 def subtract_quantity(product_id):
     cart = session.get('cart', [])
+    updated_qty = 0
     for item in cart:
         if item['id'] == product_id and item['quantity'] > 1:
             item['quantity'] -= 1
+            updated_qty = item['quantity']
             break
+    
+    # KLÍČOVÝ KROK: Přepočet pro Index
+    total_qty = sum(i.get('quantity', 0) for i in cart)
     session['cart'] = cart
-    return jsonify({"success": True, "quantity": item['quantity']})
+    session['cart_count'] = total_qty
+    session.modified = True
+    
+    return jsonify({"success": True, "quantity": updated_qty, "cart_quantity": total_qty})
 
 @app.route('/remove-from-cart/<int:product_id>')
 def remove_from_cart(product_id):
@@ -216,6 +246,19 @@ def remove_from_cart(product_id):
     cart = [item for item in cart if item['id'] != product_id]
     session['cart'] = cart
     return redirect(url_for('shopping_cart'))
+
+@app.route('/remove-from-cart-ajax/<int:product_id>', methods=['POST'])
+def remove_from_cart_ajax(product_id):
+    cart = session.get('cart', [])
+    cart = [item for item in cart if item['id'] != product_id]
+    
+    # Přepočet pro bublinu na všech stránkách
+    total_qty = sum(item.get('quantity', 0) for item in cart)
+    session['cart'] = cart
+    session['cart_count'] = total_qty
+    session.modified = True
+    
+    return jsonify({"success": True, "cart_quantity": total_qty})
 
 
 if __name__ == '__main__':
