@@ -90,7 +90,7 @@
         </li>
 
         <li class="label1" data-label1="hot">
-            <a href="{{ url_for('shopping_cart') }}">Features</a>
+            <a href="{{ url_for('shopping_cart') }}">Cart</a>
         </li>
 
         <li>
@@ -287,7 +287,7 @@
             <!-- Subtotal + Buttons -->
             <div class="w-full">
                 <div id="header-cart-total" class="header-cart-total w-full p-tb-40">
-                    Total: $0.00
+                    Total: ${{ "%.2f"|format(cart_total_price) }}
                 </div>
 
                 <div class="header-cart-buttons flex-w w-full">

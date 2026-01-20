@@ -97,10 +97,15 @@ app.secret_key = "tajnyklic"
 @app.context_processor
 def inject_cart_count():
     cart = session.get('cart', [])
-    # Spočítáme kusy a hned je uložíme do session, aby byla data všude stejná
-    total = sum(item.get('quantity', 0) for item in cart)
-    session['cart_count'] = total
-    return dict(cart_count=total)
+    total_qty = sum(item.get('quantity', 0) for item in cart)
+    # Tady přidáváme výpočet peněz:
+    total_price = sum(item.get('quantity', 0) * item.get('price', 0) for item in cart)
+    
+    session['cart_count'] = total_qty
+    return dict(
+        cart_count=total_qty, 
+        cart_total_price=total_price
+    )
 
 @app.route('/')
 def index():
