@@ -34,6 +34,21 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/util.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
 <!--===============================================================================================-->
+<style>
+	/* Tohle odsune křížek od kraje, aby na něj scrollbar nelezl */
+    .header-cart-item-remove {
+        margin-right: 15px; 
+        position: relative;
+        z-index: 20; /* Vyšší číslo zajistí, že křížek bude "v popředí" */
+    }
+
+    /* Zvětšíme klikací plochu, aby se do křížku lépe trefovalo */
+    .remove-mini-cart {
+        display: block;
+        padding: 5px 10px;
+        font-weight: bold;
+    }
+</style>
 </head>
 <body class="animsition">
 	
@@ -273,8 +288,8 @@
 
                     <!-- Remove button -->
                     <div class="header-cart-item-remove ml-auto">
-                        <a href="{{ url_for('remove_from_cart', product_id=item.id) }}" class="text-danger">✕</a>
-                    </div>
+    		<a href="#" class="text-danger remove-mini-cart" data-id="{{ item.id }}">✕</a>
+		</div>
                 </li>
                 {% endfor %}
 
@@ -649,7 +664,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 <script>
 $(document).ready(function() {
     // --- 1. AKTUALIZACE BUBLINY (ČERVENÉ ČÍSLO) ---
-    // Tato funkce zajistí, že se přepíšou všechny bubliny na stránce
     function updateBadges(count) {
         const badges = document.querySelectorAll('.icon-header-noti');
         badges.forEach(badge => {
@@ -657,7 +671,7 @@ $(document).ready(function() {
         });
     }
 
-    // --- 2. PŘIDÁNÍ DO KOŠÍKU (Pokud bys měl i na blogu nějaké doporučené produkty) ---
+    // --- 2. PŘIDÁNÍ DO KOŠÍKU ---
     $('.js-addcart-detail').on('click', async function(e) {
         e.preventDefault();
         const btn = this;
@@ -669,10 +683,7 @@ $(document).ready(function() {
             const data = await res.json();
 
             if (data.success) {
-                // Okamžitě změníme číslo v bublině
                 updateBadges(data.cart_quantity);
-
-                // Alert a refresh, aby se naplnil ten vysouvací minikošík novými daty z Pythonu
                 swal(nameProduct, "is added to cart !", "success").then(() => {
                     location.reload();
                 });
@@ -682,7 +693,36 @@ $(document).ready(function() {
         }
     });
 
-    // --- 3. PERFECT SCROLLBAR (Pro minikošík, aby se v něm dalo rolovat) ---
+    // --- 4. MAZÁNÍ Z MINI-KOŠÍKU (Důležité pro Blog/Home) ---
+    // Používáme delegaci (document.on), protože položky v košíku mohou vznikat dynamicky
+    $(document).on('click', '.remove-mini-cart', async function(e) {
+        e.preventDefault();
+        const btn = this;
+        const productId = btn.dataset.id; 
+
+        try {
+            // Poslíček (fetch) běží do Pythonu
+            const res = await fetch(`/remove-from-cart-ajax/${productId}`, { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                // 1. Odstraníme položku z HTML (to li, ve kterém je křížek)
+                $(btn).closest('.header-cart-item').remove();
+
+                // 2. Aktualizujeme bublinu novým číslem ze serveru
+                updateBadges(data.cart_quantity);
+
+                // 3. Volitelně: Pokud máš v mini-košíku element pro Total cenu, můžeš ho přepsat
+                // (K tomu bys musel posílat cenu z Pythonu, nebo ji nechat na nule po refreshi)
+                
+                console.log("Smazáno trvale i z blogu");
+            }
+        } catch (error) {
+            console.error("Chyba při mazání z mini-košíku:", error);
+        }
+    });
+
+    // --- 3. PERFECT SCROLLBAR ---
     $('.js-pscroll').each(function(){
         $(this).css({ 'position': 'relative', 'overflow': 'hidden' });
         var ps = new PerfectScrollbar(this, {

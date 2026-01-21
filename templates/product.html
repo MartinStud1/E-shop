@@ -34,6 +34,21 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/util.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
 <!--===============================================================================================-->
+<style>
+	/* Tohle odsune křížek od kraje, aby na něj scrollbar nelezl */
+    .header-cart-item-remove {
+        margin-right: 15px; 
+        position: relative;
+        z-index: 20; /* Vyšší číslo zajistí, že křížek bude "v popředí" */
+    }
+
+    /* Zvětšíme klikací plochu, aby se do křížku lépe trefovalo */
+    .remove-mini-cart {
+        display: block;
+        padding: 5px 10px;
+        font-weight: bold;
+    }
+</style>
 </head>
 <body class="animsition">
 	
@@ -273,8 +288,12 @@
             </span>
         </div>
         <div class="header-cart-item-remove ml-auto">
-            <a href="{{ url_for('remove_from_cart', product_id=item.id) }}" class="text-danger">✕</a>
-        </div>
+    <a href="{{ url_for('remove_from_cart', product_id=item.id) }}" 
+       class="text-danger remove-mini-cart" 
+       data-id="{{ item.id }}">
+       ✕
+    </a>
+</div>
     </li>
     {% endfor %}
     {% if session.get('cart')|length == 0 %}
@@ -861,6 +880,7 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 <script src="{{ url_for('static', filename='vendor/isotope/isotope.pkgd.min.js') }}"></script>
 <!--===============================================================================================-->
 <script src="{{ url_for('static', filename='vendor/sweetalert/sweetalert.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
 <script>
 	$(document).ready(function() {
     // --- 1. MODÁLNÍ OKNA (Opraveno proti problikávání) ---
@@ -900,48 +920,63 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
     });
 
     // --- 3. PŘIDÁNÍ DO KOŠÍKU (AJAX + Alert + Refresh) ---
-    $('.js-addcart-detail').on('click', async function(e) {
-        e.preventDefault();
-        const btn = this;
-        const productId = btn.dataset.id; // Vyžaduje data-id na tlačítku
-        const nameProduct = $(btn).closest('.p-b-30').find('.js-name-detail').html() || "Product";
+$('.js-addcart-detail').on('click', async function(e) {
+    e.preventDefault();
+    const btn = this;
+    const productId = btn.dataset.id; 
+    const nameProduct = $(btn).closest('.p-b-30').find('.js-name-detail').html() || "Product";
 
-        try {
-            const res = await fetch(`/add-to-cart/${productId}`, { method: 'POST' });
-            const data = await res.json();
+    try {
+        const res = await fetch(`/add-to-cart/${productId}`, { method: 'POST' });
+        const data = await res.json();
 
-            if (data.success) {
-                // Aktualizace červené bubliny
-                const badge = document.querySelector('.icon-header-noti');
-                if (badge) badge.setAttribute('data-notify', data.cart_quantity);
+        if (data.success) {
+            // Aktualizace červené bubliny hned
+            const badges = document.querySelectorAll('.icon-header-noti');
+            badges.forEach(badge => badge.setAttribute('data-notify', data.cart_quantity));
 
-                // Alert a následný REFRESH po kliknutí na OK
-                swal(nameProduct, "is added to cart !", "success").then(() => {
-                    location.reload();
-                });
-            }
-        } catch (error) {
-            console.error("Chyba:", error);
+            // Potvrzení a refresh, aby se přegeneroval boční mini-košík
+            swal(nameProduct, "is added to cart !", "success").then(() => {
+                location.reload();
+            });
         }
-    });
-
-    // --- 4. PERFECT SCROLLBAR ---
-    $('.js-pscroll').each(function(){
-        $(this).css({ 'position': 'relative', 'overflow': 'hidden' });
-        var ps = new PerfectScrollbar(this, {
-            wheelSpeed: 1,
-            scrollingThreshold: 1000,
-            wheelPropagation: false,
-        });
-        $(window).on('resize', function() { ps.update(); });
-    });
+    } catch (error) {
+        console.error("Chyba při přidávání:", error);
+    }
 });
 
-// --- 5. LOGIKA KOŠÍKU (Live výpočty na stránce košíku) ---
+// --- 3. PERFECT SCROLLBAR (Opraveno pro Home/Products) ---
+$('.js-pscroll').each(function(){
+		$(this).css('position','relative');
+		$(this).css('overflow','hidden');
+		var ps = new PerfectScrollbar(this, {
+			wheelSpeed: 1,
+			scrollingThreshold: 1000,
+			wheelPropagation: false,
+		});
+
+		$(window).on('resize', function(){
+			ps.update();
+		})
+	});
+
+// Spustit při načtení
+initScrollbar();
+
+// KLÍČOVÝ KROK: Refresh scrollbaru, když uživatel klikne na ikonu košíku
+$('.js-show-cart').on('click', function() {
+    setTimeout(function() {
+        initScrollbar();
+    }, 100); // Počkáme 100ms, až se panel vysune a zviditelní
+});
+
+// --- 5. LOGIKA KOŠÍKU (Live výpočty a AJAX mazání) ---
 
 function updateCartTotals() {
     let subtotal = 0;
-    document.querySelectorAll('.table_row').forEach(row => {
+    const rows = document.querySelectorAll('.table_row');
+    
+    rows.forEach(row => {
         const priceText = row.querySelector('.price').textContent.replace('$', '').trim();
         const price = parseFloat(priceText);
         const quantity = parseInt(row.querySelector('.num-product').value);
@@ -949,12 +984,14 @@ function updateCartTotals() {
     });
     
     const formattedTotal = '$ ' + subtotal.toFixed(2);
-    ['cart-subtotal', 'cart-total'].forEach(id => {
+    
+    // Aktualizace všech polí s cenou (hlavní stránka i hlavička)
+    ['cart-subtotal', 'cart-total', 'header-cart-total'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = formattedTotal;
+        if (el) {
+            el.textContent = id === 'header-cart-total' ? 'Total: ' + formattedTotal : formattedTotal;
+        }
     });
-    const headerTotal = document.getElementById('header-cart-total');
-    if (headerTotal) headerTotal.textContent = 'Total: ' + formattedTotal;
 }
 
 // Plus / Mínus tlačítka
@@ -968,34 +1005,69 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
         try {
             const res = await fetch(isUp ? `/add-quantity/${id}` : `/subtract-quantity/${id}`, { method: 'POST' });
             const data = await res.json();
+            
             if (data.success) {
                 input.value = data.quantity;
                 const price = parseFloat(row.querySelector('.price').textContent.replace('$', ''));
                 row.querySelector('.total').textContent = '$ ' + (price * data.quantity).toFixed(2);
+                
+                // Aktualizace bubliny
+                const badges = document.querySelectorAll('.icon-header-noti');
+                badges.forEach(badge => badge.setAttribute('data-notify', data.cart_quantity));
+                
                 updateCartTotals();
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Chyba množství:", e); }
     });
 });
 
-// Odstranění z košíku (UI refresh)
-document.querySelectorAll('.remove-from-cart-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
+// ODSTRANĚNÍ Z KOŠÍKU (Opraveno: AJAX volání serveru)
+document.querySelectorAll('.remove-from-cart-btn, .remove-mini-cart').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        const row = btn.closest('.table_row');
-        const id = row.dataset.id;
-        row.remove();
-        const miniItem = document.querySelector(`.header-cart-item[data-id='${id}']`);
-        if (miniItem) miniItem.remove();
-        updateCartTotals();
+        
+        // Získáme ID z data-id (u křížku) nebo z řádku (u tlačítka v tabulce)
+        const id = btn.dataset.id || btn.closest('.table_row')?.dataset.id;
+        if (!id) return;
+
+        try {
+            // 1. Řekneme Pythonu, aby to smazal ze session
+            const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
+            const data = await res.json();
+            
+            if (data.success) {
+                // 2. Smažeme řádek v tabulce
+                const row = document.querySelector(`.table_row[data-id='${id}']`);
+                if (row) row.remove();
+                
+                // 3. Smažeme položku v mini-košíku
+                const miniItem = document.querySelector(`.header-cart-item[data-id='${id}']`);
+                if (miniItem) miniItem.remove();
+                
+                // 4. Aktualizace bubliny a cen
+                const badges = document.querySelectorAll('.icon-header-noti');
+                badges.forEach(badge => badge.setAttribute('data-notify', data.cart_quantity));
+                
+                updateCartTotals();
+                
+                // Pokud je košík prázdný, můžeme vypsat text
+                if (document.querySelectorAll('.header-cart-item').length === 0) {
+                    const list = document.querySelector('.header-cart-wrapitem');
+                    if (list) list.innerHTML = '<li class="header-cart-item text-center">Your cart is empty.</li>';
+                }
+            }
+        } catch (err) {
+            console.error("Chyba při mazání:", err);
+        }
     });
 });
 
-// Inicializace košíku po načtení
+// Inicializace po načtení
 document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.table_row')) {
         updateCartTotals();
     }
+});
 });
 </script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

@@ -35,6 +35,21 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cart.css') }}">
 <!--===============================================================================================-->
+<style>
+	/* Tohle odsune křížek od kraje, aby na něj scrollbar nelezl */
+    .header-cart-item-remove {
+        margin-right: 15px; 
+        position: relative;
+        z-index: 20; /* Vyšší číslo zajistí, že křížek bude "v popředí" */
+    }
+
+    /* Zvětšíme klikací plochu, aby se do křížku lépe trefovalo */
+    .remove-mini-cart {
+        display: block;
+        padding: 5px 10px;
+        font-weight: bold;
+    }
+</style>
 </head>
 <body class="animsition">
 	
@@ -700,7 +715,7 @@ function updateCartTotals(){
 }
 
 // ---------------------------
-// 3. Mini cart live update
+// 3. Mini cart live update (OPRAVENO: AJAX pro trvalé smazání)
 // ---------------------------
 function refreshMiniCartOptimized() {
     let subtotal = 0;
@@ -737,21 +752,38 @@ function refreshMiniCartOptimized() {
                 </div>`;
             miniCartUl.appendChild(li);
 
-            li.querySelector('.remove-mini-cart').addEventListener('click', e => {
+            // AKTIVACE KŘÍŽKU V MINI-KOŠÍKU (Posílá fetch do Pythonu)
+            li.querySelector('.remove-mini-cart').addEventListener('click', async (e) => {
                 e.preventDefault();
-                const mainRow = document.querySelector(`.table_row[data-id='${id}']`);
-                if(mainRow) mainRow.remove();
-                li.remove();
-                updateCartTotals();
-                refreshMiniCartOptimized();
-                updateBadgeCount();
+                try {
+                    const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        // Smažeme to z obou míst v HTML (pokud existují)
+                        const mainRow = document.querySelector(`.table_row[data-id='${id}']`);
+                        if(mainRow) mainRow.remove();
+                        li.remove();
+
+                        // Přepočítáme zbytek
+                        updateCartTotals();
+                        refreshMiniCartOptimized();
+                        
+                        // Aktualizujeme červenou bublinu
+                        const badges = document.querySelectorAll('.icon-header-noti');
+                        badges.forEach(badge => {
+                            badge.setAttribute('data-notify', data.cart_quantity);
+                        });
+                    }
+                } catch (err) {
+                    console.error("Chyba při mazání z mini-košíku:", err);
+                }
             });
         }
     });
 
-    // Kontrola prázdného košíku
     if(document.querySelectorAll('.table_row').length === 0){
-        miniCartUl.innerHTML = '<li class="header-cart-item text-center">Košík je prázdný.</li>';
+        miniCartUl.innerHTML = '<li class="header-cart-item text-center">Your cart is empty.</li>';
         subtotal = 0;
     }
 
@@ -767,62 +799,57 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
         const row = btn.closest('.table_row');
         const input = row.querySelector('.num-product');
         const id = row.dataset.id;
-        let res;
-
         const url = btn.classList.contains('btn-num-product-up') 
-            ? `/add-quantity/${id}` 
-            : `/subtract-quantity/${id}`;
+                    ? `/add-quantity/${id}` 
+                    : `/subtract-quantity/${id}`;
 
         try {
-            res = await fetch(url, { method: 'POST' });
+            const res = await fetch(url, { method: 'POST' });
             const data = await res.json();
             if(data.success){
                 input.value = data.quantity;
-                updateRowTotal(row);
+                updateRowTotal(row); // Tato funkce volá updateCartTotals a refreshMiniCart
+                
+                // Aktualizace bubliny i při změně množství
+                const badges = document.querySelectorAll('.icon-header-noti');
+                badges.forEach(badge => {
+                    badge.setAttribute('data-notify', data.cart_quantity);
+                });
             }
         } catch (err) {
-            console.error("Chyba při aktualizaci množství:", err);
+            console.error("Chyba při změně množství:", err);
         }
     });
 });
 
 // ---------------------------
-// 5. Remove button z hlavního košíku (OPRAVENO: AJAX na server)
+// 5. Remove button z hlavní tabulky (AJAX)
 // ---------------------------
 document.querySelectorAll('.remove-from-cart-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-        e.preventDefault(); // Zabráníme obnovení stránky
-        
+        e.preventDefault();
         const row = btn.closest('.table_row');
         const id = row.dataset.id;
-        
-        // Zde voláme ten nový Python endpoint
+
         try {
             const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
             const data = await res.json();
             
             if (data.success) {
-                // Smažeme řádek z tabulky před očima uživatele
                 row.remove();
-                
-                // Smažeme to i z toho malého bočního košíku (pokud tam je)
                 const li = document.querySelector(`.header-cart-item[data-id='${id}']`);
                 if(li) li.remove();
                 
-                // Přepočítáme ceny na stránce
                 updateCartTotals();
                 refreshMiniCartOptimized();
                 
-                // AKTUALIZUJEME BUBLINU s číslem (tohle ti chybělo!)
                 const badges = document.querySelectorAll('.icon-header-noti');
                 badges.forEach(badge => {
-                    if (badge.querySelector('.zmdi-shopping-cart')) {
-                        badge.setAttribute('data-notify', data.cart_quantity);
-                    }
+                    badge.setAttribute('data-notify', data.cart_quantity);
                 });
             }
         } catch (err) {
-            console.error("Chyba při komunikaci se serverem:", err);
+            console.error("Chyba při mazání z hlavní tabulky:", err);
         }
     });
 });
