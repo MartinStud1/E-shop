@@ -688,17 +688,9 @@ $(document).ready(function() {
             const data = await res.json();
 
             if (data.success) {
-                // 1. Odstraníme položku z HTML (to li, ve kterém je křížek)
-                $(btn).closest('.header-cart-item').remove();
-
-                // 2. Aktualizujeme bublinu novým číslem ze serveru
-                updateBadges(data.cart_quantity);
-
-                // 3. Volitelně: Pokud máš v mini-košíku element pro Total cenu, můžeš ho přepsat
-                // (K tomu bys musel posílat cenu z Pythonu, nebo ji nechat na nule po refreshi)
-                
-                console.log("Smazáno trvale i z blogu");
-            }
+    // Místo ručního .remove() dáme refresh, aby se přepočítal Total v mini-košíku
+    location.reload();
+}
         } catch (error) {
             console.error("Chyba při mazání z mini-košíku:", error);
         }

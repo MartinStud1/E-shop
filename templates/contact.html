@@ -671,27 +671,7 @@ $(document).ready(function() {
         });
     }
 
-    // --- 2. PŘIDÁNÍ DO KOŠÍKU ---
-    $('.js-addcart-detail').on('click', async function(e) {
-        e.preventDefault();
-        const btn = this;
-        const productId = btn.dataset.id; 
-        const nameProduct = $(btn).closest('.p-b-30').find('.js-name-detail').html() || "Product";
-
-        try {
-            const res = await fetch(`/add-to-cart/${productId}`, { method: 'POST' });
-            const data = await res.json();
-
-            if (data.success) {
-                updateBadges(data.cart_quantity);
-                swal(nameProduct, "is added to cart !", "success").then(() => {
-                    location.reload();
-                });
-            }
-        } catch (error) {
-            console.error("Chyba při přidávání:", error);
-        }
-    });
+   
 
     // --- 4. MAZÁNÍ Z MINI-KOŠÍKU (Důležité pro Blog/Home) ---
     // Používáme delegaci (document.on), protože položky v košíku mohou vznikat dynamicky
@@ -706,17 +686,10 @@ $(document).ready(function() {
             const data = await res.json();
 
             if (data.success) {
-                // 1. Odstraníme položku z HTML (to li, ve kterém je křížek)
-                $(btn).closest('.header-cart-item').remove();
-
-                // 2. Aktualizujeme bublinu novým číslem ze serveru
-                updateBadges(data.cart_quantity);
-
-                // 3. Volitelně: Pokud máš v mini-košíku element pro Total cenu, můžeš ho přepsat
-                // (K tomu bys musel posílat cenu z Pythonu, nebo ji nechat na nule po refreshi)
-                
-                console.log("Smazáno trvale i z blogu");
-            }
+ 
+    location.reload(); 
+    
+}
         } catch (error) {
             console.error("Chyba při mazání z mini-košíku:", error);
         }

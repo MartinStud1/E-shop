@@ -919,6 +919,47 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
         $(this).off('click');
     });
 
+	// --- 5. ODSTRANĚNÍ Z KOŠÍKU - AGRESIVNÍ VERZE ---
+$(document).on('click', '.remove-from-cart-btn, .remove-mini-cart', function(e) {
+    // 1. Totální stopka pro všechno ostatní
+    e.preventDefault();
+    e.stopImmediatePropagation(); 
+    e.stopPropagation();
+
+    // 2. Najdeme ID všemi možnými způsoby
+    var id = $(this).attr('data-id') || $(this).data('id') || $(this).closest('[data-id]').attr('data-id');
+    
+    if (!id) {
+        // Poslední záchrana: zkusíme najít id v URL odkazu
+        var href = $(this).attr('href');
+        if(href) {
+            var parts = href.split('/');
+            id = parts[parts.length - 1];
+        }
+    }
+
+    console.log("Pokus o smazání ID:", id); // Sleduj F12 konzoli
+
+    if (!id || id === "#") return false;
+
+    // 3. AJAX
+    $.ajax({
+        url: '/remove-from-cart-ajax/' + id,
+        type: 'POST',
+        success: function(response) {
+            console.log("Server odpověděl:", response);
+            if (response.success) {
+                window.location.reload();
+            }
+        },
+        error: function() {
+            // I když to hodí chybu, zkusíme refresh, jestli se to v Pythonu přesto nesmazalo
+            window.location.reload();
+        }
+    });
+
+    return false;
+});
     // --- 3. PŘIDÁNÍ DO KOŠÍKU (AJAX + Alert + Refresh) ---
 $('.js-addcart-detail').on('click', async function(e) {
     e.preventDefault();
@@ -1021,46 +1062,20 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
     });
 });
 
-// ODSTRANĚNÍ Z KOŠÍKU (Opraveno: AJAX volání serveru)
-document.querySelectorAll('.remove-from-cart-btn, .remove-mini-cart').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        // Získáme ID z data-id (u křížku) nebo z řádku (u tlačítka v tabulce)
-        const id = btn.dataset.id || btn.closest('.table_row')?.dataset.id;
-        if (!id) return;
-
-        try {
-            // 1. Řekneme Pythonu, aby to smazal ze session
-            const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
-            const data = await res.json();
-            
-            if (data.success) {
-                // 2. Smažeme řádek v tabulce
-                const row = document.querySelector(`.table_row[data-id='${id}']`);
-                if (row) row.remove();
-                
-                // 3. Smažeme položku v mini-košíku
-                const miniItem = document.querySelector(`.header-cart-item[data-id='${id}']`);
-                if (miniItem) miniItem.remove();
-                
-                // 4. Aktualizace bubliny a cen
-                const badges = document.querySelectorAll('.icon-header-noti');
-                badges.forEach(badge => badge.setAttribute('data-notify', data.cart_quantity));
-                
-                updateCartTotals();
-                
-                // Pokud je košík prázdný, můžeme vypsat text
-                if (document.querySelectorAll('.header-cart-item').length === 0) {
-                    const list = document.querySelector('.header-cart-wrapitem');
-                    if (list) list.innerHTML = '<li class="header-cart-item text-center">Your cart is empty.</li>';
-                }
-            }
-        } catch (err) {
-            console.error("Chyba při mazání:", err);
-        }
+// Tuhle funkci tam prostě jen vlož jako text, klidně na konec skriptu
+function initScrollbar() {
+    $('.js-pscroll').each(function(){
+        $(this).css('position','relative');
+        $(this).css('overflow','hidden');
+        var ps = new PerfectScrollbar(this, {
+            wheelSpeed: 1,
+            scrollingThreshold: 1000,
+            wheelPropagation: false,
+        });
     });
-});
+}
+
+
 
 // Inicializace po načtení
 document.addEventListener('DOMContentLoaded', () => {

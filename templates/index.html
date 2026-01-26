@@ -1180,41 +1180,35 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
     });
 });
 
-// Odstranění z košíku (OPRAVENO: Nyní volá Python přes fetch!)
-document.querySelectorAll('.remove-from-cart-btn, .remove-mini-cart').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        e.preventDefault();
+// --- ODSTRANĚNÍ Z KOŠÍKU (Opraveno: AJAX + Okamžitý Refresh) ---
+$(document).on('click', '.remove-from-cart-btn, .remove-mini-cart', async function(e) {
+    e.preventDefault();
+    e.stopPropagation(); // Zabrání šíření události, která by mohla nulovat ceny
+
+    // Získáme ID (funguje pro oba křížky i přes jQuery)
+    const id = $(this).data('id') || $(this).closest('.table_row').data('id');
+    
+    if (!id) {
+        console.error("ID produktu nenalezeno!");
+        return;
+    }
+
+    try {
+        // Pošleme příkaz Pythonu
+        const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
+        const data = await res.json();
         
-        // Získáme ID z data-id nebo z řádku tabulky
-        const id = btn.dataset.id || btn.closest('.table_row')?.dataset.id;
-        if (!id) return;
-
-        try {
-            // POSÍLÁME POSLÍČKA (fetch) DO PYTHONU
-            const res = await fetch(`/remove-from-cart-ajax/${id}`, { method: 'POST' });
-            const data = await res.json();
-            
-            if (data.success) {
-                // Smažeme položku z tabulky
-                const row = document.querySelector(`.table_row[data-id='${id}']`);
-                if (row) row.remove();
-                
-                // Smažeme položku z mini košíku
-                const miniItem = document.querySelector(`.header-cart-item[data-id='${id}']`);
-                if (miniItem) miniItem.remove();
-                
-                // Aktualizujeme bublinu novým číslem ze serveru
-                document.querySelectorAll('.icon-header-noti').forEach(badge => {
-                    badge.setAttribute('data-notify', data.cart_quantity);
-                });
-
-                updateCartTotals();
-                console.log("Smazáno trvale.");
-            }
-        } catch (err) {
-            console.error("Chyba při mazání:", err);
+        if (data.success) {
+            // TADY JE TA ZMĚNA: Žádné ruční mazání row.remove(), ale rovnou refresh!
+            // Refresh zajistí, že Python znovu načte session a vykreslí správné ceny.
+            // Zůstaneš na stránce, kde jsi byl (Blog/Home/Product).
+            location.reload(); 
         }
-    });
+    } catch (err) {
+        console.error("Chyba při mazání:", err);
+        // Pokud AJAX selže, uděláme refresh jako nouzovku
+        location.reload();
+    }
 });
 
 // Inicializace košíku po načtení
