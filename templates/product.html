@@ -1085,6 +1085,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 });
 </script>
+<script>
+	$(document).ready(function() {
+    // Sledujeme input se jménem 'search-product'
+    $('input[name="search-product"]').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        var $grid = $('.isotope-grid');
+
+        $grid.isotope({
+            filter: function() {
+                // Najdeme název produktu uvnitř karty
+                var name = $(this).find('.js-name-b2').text().toLowerCase();
+                // Vrátíme true, pokud název obsahuje to, co píšeme
+                return name.indexOf(value) > -1;
+            }
+        });
+    });
+});
+</script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 </body>
