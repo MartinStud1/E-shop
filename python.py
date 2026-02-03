@@ -3,6 +3,8 @@ import requests
 import random
 
 
+registered_users = []
+
 
 women_categories = [
   "womens-bags",
@@ -116,14 +118,68 @@ def inject_cart_count():
 def index():
     return render_template('index.html', products = all_random_products)
 
+# --- REGISTRACE ---
+@app.route('/registration', methods=['GET', 'POST'])
+def registration():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
 
-@app.route("/home-02")
-def home_02():
-    return render_template("home-02.html")
+        # Kontrola, zda hesla sedí
+        if password != confirm_password:
+            return render_template('registration.html', error="Hesla se neshodují.")
 
-@app.route("/home-03")
-def home_03():
-    return render_template("home-03.html")
+        # Kontrola, zda uživatel s tímto e-mailem už neexistuje
+        for user in registered_users:
+            if user['email'] == email:
+                return render_template('registration.html', error="Uživatel s tímto e-mailem již existuje.")
+
+        # Přidání nového uživatele do seznamu (včetně jeho budoucího košíku)
+        registered_users.append({
+            "username": username,
+            "email": email,
+            "password": password,
+            "user_cart": []  # Každý uživatel má své pole pro košík
+        })
+
+        print(f"Nový uživatel: {username}, Celkem registrovaných: {len(registered_users)}")
+        return redirect(url_for('login'))
+
+    return render_template('registration.html')
+
+@app.route('/logout')
+def logout():
+    # Odstraníme informaci o přihlášeném uživateli z aktuálního sezení
+    session.pop('username', None)
+    session.pop('email', None)
+    
+    # Teď je uživatel odhlášen (v liště uvidí Login/Register),
+    # ale v seznamu 'registered_users' je stále uložen se všemi daty.
+    
+    return redirect(url_for('index'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        # Hledáme uživatele v našem seznamu
+        for user in registered_users:
+            if user['email'] == email and user['password'] == password:
+                # TADY SE TO DĚJE: Zapíšeme uživatele do session
+                session['username'] = user['username']
+                session['email'] = user['email']
+                
+                print(f"DEBUG: Login successful for {user['username']}")
+                return redirect(url_for('index')) # Hodí tě to na domovskou stránku
+        
+        # Pokud nikoho nenajdeme, vrátíme se na login s chybou
+        return render_template('login.html', error="Invalid email or password.")
+
+    return render_template('login.html')
 
 @app.route('/about')
 def about():

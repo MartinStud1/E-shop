@@ -58,30 +58,32 @@
 		<div class="container-menu-desktop">
 			<!-- Topbar -->
 			<div class="top-bar">
-				<div class="content-topbar flex-sb-m h-full container">
-					<div class="left-top-bar">
-						Free shipping for standard order over $100
-					</div>
+    <div class="content-topbar flex-sb-m h-full container">
+        <div class="left-top-bar">
+            Free shipping for standard order over $100
+        </div>
 
-					<div class="right-top-bar flex-w h-full">
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							Help & FAQs
-						</a>
-
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							My Account
-						</a>
-
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							EN
-						</a>
-
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							USD
-						</a>
-					</div>
-				</div>
-			</div>
+        <div class="right-top-bar flex-w h-full">
+            {% if session.get('username') %}
+                <a href="#" class="flex-c-m p-lr-15 trans-04" style="color: #717fe0; font-weight: bold;">
+                    <i class="zmdi zmdi-account m-r-5"></i> {{ session['username'] }}
+                </a>
+                
+                <a href="{{ url_for('logout') }}" class="flex-c-m p-lr-15 trans-04">
+                    Logout
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="flex-c-m p-lr-15 trans-04">
+                    Login
+                </a>
+                
+                <a href="{{ url_for('registration') }}" class="flex-c-m p-lr-15 trans-04">
+                    Register
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
 			<div class="wrap-menu-desktop">
 				<nav class="limiter-menu-desktop container">
@@ -117,6 +119,9 @@
 
         <li>
             <a href="{{ url_for('contact') }}">Contact</a>
+        </li>
+		 <li>
+            <a href="{{ url_for('registration') }}">Registration</a>
         </li>
     </ul>
 </div>
@@ -186,24 +191,26 @@
 				</li>
 
 				<li>
-					<div class="right-top-bar flex-w h-full">
-						<a href="#" class="flex-c-m p-lr-10 trans-04">
-							Help & FAQs
-						</a>
-
-						<a href="#" class="flex-c-m p-lr-10 trans-04">
-							My Account
-						</a>
-
-						<a href="#" class="flex-c-m p-lr-10 trans-04">
-							EN
-						</a>
-
-						<a href="#" class="flex-c-m p-lr-10 trans-04">
-							USD
-						</a>
-					</div>
-				</li>
+    <div class="right-top-bar flex-w h-full">
+        {% if session.get('username') %}
+            <a href="#" class="flex-c-m p-lr-15 trans-04" style="color: #717fe0; font-weight: bold;">
+                <i class="zmdi zmdi-account m-r-5"></i> {{ session['username'] }}
+            </a>
+            
+            <a href="{{ url_for('logout') }}" class="flex-c-m p-lr-15 trans-04">
+                Logout
+            </a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="flex-c-m p-lr-15 trans-04">
+                Login
+            </a>
+            
+            <a href="{{ url_for('registration') }}" class="flex-c-m p-lr-15 trans-04">
+                Register
+            </a>
+        {% endif %}
+    </div>
+</li>
 			</ul>
 
 			<ul class="main-menu-m">
