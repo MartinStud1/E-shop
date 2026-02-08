@@ -56,32 +56,33 @@
 	<header class="header-v4">
 		<!-- Header desktop -->
 		<div class="container-menu-desktop">
-			<!-- Topbar -->
 			<div class="top-bar">
-				<div class="content-topbar flex-sb-m h-full container">
-					<div class="left-top-bar">
-						Free shipping for standard order over $100
-					</div>
+    <div class="content-topbar flex-sb-m h-full container">
+        <div class="left-top-bar">
+            Free shipping for standard order over $100
+        </div>
 
-					<div class="right-top-bar flex-w h-full">
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							Help & FAQs
-						</a>
+        <div class="right-top-bar flex-r-m h-full">
+            {% if session.get('username') %}
+                <a href="#" class="flex-c-m trans-04 p-lr-25" style="color: #717fe0; font-weight: bold;">
+                    <i class="zmdi zmdi-account m-r-5"></i> {{ session['username'] }}
+                </a>
 
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							My Account
-						</a>
+                <a href="{{ url_for('logout') }}" class="flex-c-m trans-04 p-lr-25">
+                    Logout
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="flex-c-m trans-04 p-lr-25">
+                    Login
+                </a>
 
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							EN
-						</a>
-
-						<a href="#" class="flex-c-m trans-04 p-lr-25">
-							USD
-						</a>
-					</div>
-				</div>
-			</div>
+                <a href="{{ url_for('registration') }}" class="flex-c-m trans-04 p-lr-25">
+                    Register
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
 			<div class="wrap-menu-desktop how-shadow1">
 				<nav class="limiter-menu-desktop container">
@@ -334,15 +335,15 @@
 						</h3>
 
 						<p class="stext-113 cl6 p-b-26">
-							Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris consequat consequat enim, non auctor massa ultrices non. Morbi sed odio massa. Quisque at vehicula tellus, sed tincidunt augue. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Maecenas varius egestas diam, eu sodales metus scelerisque congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Maecenas gravida justo eu arcu egestas convallis. Nullam eu erat bibendum, tempus ipsum eget, dictum enim. Donec non neque ut enim dapibus tincidunt vitae nec augue. Suspendisse potenti. Proin ut est diam. Donec condimentum euismod tortor, eget facilisis diam faucibus et. Morbi a tempor elit.
+							Our brand was born out of a deep-seated passion for authentic craftsmanship and timeless aesthetics. We believe that what you wear is a reflection of who you are, and that quality should never be sacrificed for the sake of a passing trend. In a world increasingly dominated by the fleeting nature of fast fashion, we strive to take a different path—one that prioritizes substance over speed and longevity over low-cost production.
 						</p>
 
 						<p class="stext-113 cl6 p-b-26">
-							Donec gravida lorem elit, quis condimentum ex semper sit amet. Fusce eget ligula magna. Aliquam aliquam imperdiet sodales. Ut fringilla turpis in vehicula vehicula. Pellentesque congue ac orci ut gravida. Aliquam erat volutpat. Donec iaculis lectus a arcu facilisis, eu sodales lectus sagittis. Etiam pellentesque, magna vel dictum rutrum, neque justo eleifend elit, vel tincidunt erat arcu ut sem. Sed rutrum, turpis ut commodo efficitur, quam velit convallis ipsum, et maximus enim ligula ac ligula. 
+							To achieve this, we work closely with suppliers who share our core values. We are constantly seeking new, innovative ways to offer you the best of current global trends without ever compromising on the integrity or quality of our garments. We believe in transparency, fair practices, and the idea that great fashion can be both beautiful and responsible. 
 						</p>
 
 						<p class="stext-113 cl6 p-b-26">
-							Any questions? Let us know in store at 8th floor, 379 Hudson St, New York, NY 10018 or call us on (+1) 96 716 6879
+							Your satisfaction is our primary motivation. Every piece of feedback we receive helps us to keep improving, refining our collections, and growing alongside our community. Thank you for choosing to be part of our journey and for supporting a vision where quality always comes firs
 						</p>
 					</div>
 				</div>
@@ -364,7 +365,7 @@
 						</h3>
 
 						<p class="stext-113 cl6 p-b-26">
-							Mauris non lacinia magna. Sed nec lobortis dolor. Vestibulum rhoncus dignissim risus, sed consectetur erat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nullam maximus mauris sit amet odio convallis, in pharetra magna gravida. Praesent sed nunc fermentum mi molestie tempor. Morbi vitae viverra odio. Pellentesque ac velit egestas, luctus arcu non, laoreet mauris. Sed in ipsum tempor, consequat odio in, porttitor ante. Ut mauris ligula, volutpat in sodales in, porta non odio. Pellentesque tempor urna vitae mi vestibulum, nec venenatis nulla lobortis. Proin at gravida ante. Mauris auctor purus at lacus maximus euismod. Pellentesque vulputate massa ut nisl hendrerit, eget elementum libero iaculis.
+							Our mission is to empower individuals through a curated selection of apparel that balances modern innovation with traditional quality. We aim to redefine the shopping experience by offering products that are not only stylish but also ethically sourced and built to last. We believe that by choosing quality over quantity, we can make a positive impact on both our customers' lives and the environment. We are committed to continuous growth—constantly evolving our designs to stay at the forefront of the industry while remaining rooted in the classic principles of craftsmanship. Our goal is to become your trusted partner in style, providing the confidence that comes from wearing pieces crafted with care, purpose, and attention to every detail.
 						</p>
 
 						<div class="bor16 p-l-29 p-b-9 m-t-22">
