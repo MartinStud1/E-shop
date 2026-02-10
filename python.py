@@ -217,10 +217,12 @@ def login():
 
 @app.route('/about')
 def about():
+    get_current_user_cart()
     return render_template('about.html')
 
 @app.route('/blog')
 def blog():
+    get_current_user_cart()
     # slovník pro unikátní články podle id
     unique_posts = {}
 
@@ -238,6 +240,7 @@ def blog():
 
 @app.route('/blog/<int:post_id>')
 def blog_detail(post_id):
+    get_current_user_cart()
     # Procházíme všechny tagy a hledáme post podle id
     unique_posts = {}
     for tag in tags:
@@ -254,15 +257,21 @@ def blog_detail(post_id):
 
 @app.route('/contact')
 def contact():
+    get_current_user_cart()
     return render_template('contact.html')
 
 @app.route('/product')
 def product():
+    # Ensure the current user's cart is synced into the session so templates
+    # that read `session.get('cart')` show the latest data (important after AJAX).
+    get_current_user_cart()
     random.shuffle(all_products)
     return render_template('product.html', products = all_products)
 
 @app.route('/product-detail')
 def product_detail():
+    # Sync cart for product detail page as well
+    get_current_user_cart()
     return render_template('product-detail.html')
 
 @app.route('/shopping-cart')
@@ -293,6 +302,10 @@ def add_to_cart(product_id):
             "quantity": 1,
             "thumbnail": product['thumbnail']
         })
+    print("--- ADD TO CART ---")
+    print(f"User email: {session.get('email', 'ANONYMOUS')}")
+    print(f"Added product ID: {product_id}")
+    print(f"Current user_cart: {cart}")
 
     total_quantity = sum(i['quantity'] for i in cart)
     session['cart_count'] = total_quantity
@@ -349,6 +362,7 @@ def remove_from_cart(product_id):
     session.modified = True
     
     return redirect(url_for('shopping_cart'))
+
 @app.route('/remove-from-cart-ajax/<int:product_id>', methods=['POST'])
 def remove_from_cart_ajax(product_id):
     # 1. Logika smazání je stejná jako u klasické verze
@@ -364,6 +378,10 @@ def remove_from_cart_ajax(product_id):
         session['cart'] = [i for i in current_cart if i['id'] != product_id]
         session.modified = True
         cart = session['cart']
+    print("--- REMOVE FROM MINI CART ---")
+    print(f"User email: {session.get('email', 'ANONYMOUS')}")
+    print(f"Removed product ID: {product_id}")
+    print(f"Current user_cart: {cart}")
     
     # 2. Výpočet celkového množství (tady byla ta chyba s 'item')
     total_qty = sum(i.get('quantity', 0) for i in cart)
