@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, session, redirect, url_for, request
+from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 import random
 
@@ -161,7 +162,7 @@ def registration():
         registered_users.append({
             "username": username,
             "email": email,
-            "password": password,
+            "password": generate_password_hash(password),  # Hash the password
             "user_cart": []  # Každý uživatel má své pole pro košík
         })
 
@@ -192,7 +193,7 @@ def login():
         
 
         for user in registered_users:
-            if user['email'] == email and user['password'] == password:
+            if user['email'] == email and check_password_hash(user['password'], password):
                 # 1. Klasické přihlášení
                 session['username'] = user['username']
                 session['email'] = user['email']
@@ -362,7 +363,23 @@ def remove_from_cart(product_id):
     session.modified = True
     
     return redirect(url_for('shopping_cart'))
-
+@app.route('/checkout-process', methods=['POST'])
+def checkout_process():
+    if 'email' in session:
+        # PŘIHLÁŠENÝ: Najdeme uživatele a vymažeme mu list
+        for user in registered_users:
+            if user['email'] == session['email']:
+                user['user_cart'] = [] # Totální reset
+                break
+    else:
+        # ANONYM: Vymažeme košík ze session
+        session['cart'] = []
+    
+    # Resetujeme i počítadlo v session pro bublinu
+    session['cart_count'] = 0
+    session.modified = True
+    
+    return jsonify({"success": True})
 @app.route('/remove-from-cart-ajax/<int:product_id>', methods=['POST'])
 def remove_from_cart_ajax(product_id):
     # 1. Logika smazání je stejná jako u klasické verze

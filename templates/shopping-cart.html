@@ -143,7 +143,7 @@
 		<div class="wrap-header-mobile">
 			<!-- Logo moblie -->		
 			<div class="logo-mobile">
-				<a href="index.html"><img src="images/icons/logo-01.png" alt="IMG-LOGO"></a>
+				<a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='images/icons/logo-01.png') }}" alt="IMG-LOGO"></a>
 			</div>
 
 			<!-- Icon header -->
@@ -202,15 +202,8 @@
 
 			<ul class="main-menu-m">
 				<li>
-					<a href="index.html">Home</a>
-					<ul class="sub-menu-m">
-						<li><a href="index.html">Homepage 1</a></li>
-						<li><a href="home-02.html">Homepage 2</a></li>
-						<li><a href="home-03.html">Homepage 3</a></li>
-					</ul>
-					<span class="arrow-main-menu-m">
-						<i class="fa fa-angle-right" aria-hidden="true"></i>
-					</span>
+					<a href="{{ url_for('index') }}">Home</a>
+	
 				</li>
 
 				<li>
@@ -239,8 +232,7 @@
 		<div class="modal-search-header flex-c-m trans-04 js-hide-modal-search">
 			<div class="container-search-header">
 				<button class="flex-c-m btn-hide-modal-search trans-04 js-hide-modal-search">
-					<img src="images/icons/icon-close2.png" alt="CLOSE">
-				</button>
+				<img src="{{ url_for('static', filename='images/icons/icon-close2.png') }}" alt="CLOSE">
 
 				<form class="wrap-search-header flex-w p-l-15">
 					<button class="flex-c-m trans-04">
@@ -369,7 +361,7 @@
                                 </td>
                                 <td class="column-5 total">{{ "%.2f"|format(item.price * item.quantity) }}</td>
                                 <td class="column-6">
-                                    <a href="{{ url_for('remove_from_cart', product_id=item.id) }}" class="text-danger">✕</a>
+                                    <a href="#" class="text-danger remove-from-cart-btn" data-id="{{ item.id }}">✕</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -403,7 +395,7 @@
                         </div>
                     </div>
 
-                    <button class="flex-c-m stext-101 cl0 size-116 bg3 bor14 hov-btn3 p-lr-15 trans-04 pointer">
+                    <button class="flex-c-m stext-101 cl0 size-116 bg3 bor14 hov-btn3 p-lr-15 trans-04 pointer js-checkout">
                         Proceed to Checkout
                     </button>
                 </div>
@@ -439,33 +431,7 @@
 
 						<li class="p-b-10">
 							<a href="#" class="stext-107 cl7 hov-cl1 trans-04">
-								Shoes
-							</a>
-						</li>
-
-						<li class="p-b-10">
-							<a href="#" class="stext-107 cl7 hov-cl1 trans-04">
-								Watches
-							</a>
-						</li>
-					</ul>
-				</div>
-
-				<div class="col-sm-6 col-lg-3 p-b-50">
-					<h4 class="stext-301 cl0 p-b-30">
-						Help
-					</h4>
-
-					<ul>
-						<li class="p-b-10">
-							<a href="#" class="stext-107 cl7 hov-cl1 trans-04">
-								Track Order
-							</a>
-						</li>
-
-						<li class="p-b-10">
-							<a href="#" class="stext-107 cl7 hov-cl1 trans-04">
-								Returns 
+							Sports-accessories
 							</a>
 						</li>
 
@@ -530,23 +496,23 @@
 			<div class="p-t-40">
 				<div class="flex-c-m flex-w p-b-18">
 					<a href="#" class="m-all-1">
-						<img src="images/icons/icon-pay-01.png" alt="ICON-PAY">
+						<img src="{{ url_for('static', filename='images/icons/icon-pay-01.png') }}" alt="ICON-PAY">
 					</a>
 
 					<a href="#" class="m-all-1">
-						<img src="images/icons/icon-pay-02.png" alt="ICON-PAY">
+						<img src="{{ url_for('static', filename='images/icons/icon-pay-02.png') }}" alt="ICON-PAY">
 					</a>
 
 					<a href="#" class="m-all-1">
-						<img src="images/icons/icon-pay-03.png" alt="ICON-PAY">
+						<img src="{{ url_for('static', filename='images/icons/icon-pay-03.png') }}" alt="ICON-PAY">
 					</a>
 
 					<a href="#" class="m-all-1">
-						<img src="images/icons/icon-pay-04.png" alt="ICON-PAY">
+						<img src="{{ url_for('static', filename='images/icons/icon-pay-04.png') }}" alt="ICON-PAY">
 					</a>
 
 					<a href="#" class="m-all-1">
-						<img src="images/icons/icon-pay-05.png" alt="ICON-PAY">
+						<img src="{{ url_for('static', filename='images/icons/icon-pay-05.png') }}" alt="ICON-PAY">
 					</a>
 				</div>
 
@@ -844,6 +810,56 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshMiniCartOptimized();
     updateCartTotals();
     updateBadgeCount();
+});
+</script>
+<script>
+$(document).ready(function() {
+    $('.js-checkout').on('click', function(e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: '/checkout-process',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    // 1. Clear the main cart table rows
+                    document.querySelectorAll('.table_row').forEach(row => row.remove());
+                    
+                    // 2. Clear the mini cart
+                    const miniCartUl = document.querySelector('.header-cart-wrapitem');
+                    if(miniCartUl) {
+                        miniCartUl.innerHTML = '<li class="header-cart-item text-center">Your cart is empty.</li>';
+                    }
+                    
+                    // 3. Update cart totals to 0
+                    const cartSubtotal = document.getElementById('cart-subtotal');
+                    const cartTotal = document.getElementById('cart-total');
+                    if(cartSubtotal) cartSubtotal.textContent = '0.00';
+                    if(cartTotal) cartTotal.textContent = '0.00';
+                    
+                    // 4. Update badge count
+                    const badges = document.querySelectorAll('.icon-header-noti');
+                    badges.forEach(badge => {
+                        badge.setAttribute('data-notify', '0');
+                    });
+                    
+                    // 5. Update header total
+                    const headerTotalEl = document.getElementById('header-cart-total');
+                    if(headerTotalEl) headerTotalEl.textContent = 'Total: $0.00';
+                    
+                    // 6. Show success alert
+                    swal("Thank You!", "Your order has been placed successfully! Your cart has been emptied.", "success")
+                    .then(() => {
+                        // Refresh page to make sure everything is in sync
+                        window.location.reload();
+                    });
+                }
+            },
+            error: function() {
+                swal("Error", "Something went wrong during checkout. Please try again.", "error");
+            }
+        });
+    });
 });
 </script>
 <!--===============================================================================================-->
