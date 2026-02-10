@@ -375,20 +375,20 @@
                             Your email address will not be published. Required fields are marked *
                         </p>
 
-                        <form>
+                        <form id="commentForm">
                             <div class="bor19 m-b-20">
-                                <textarea class="stext-111 cl2 plh3 size-124 p-lr-18 p-tb-15" name="cmt" placeholder="Comment..."></textarea>
+                                <textarea class="stext-111 cl2 plh3 size-124 p-lr-18 p-tb-15" id="cmtInput" name="cmt" placeholder="Comment..."></textarea>
                             </div>
 
                             <div class="bor19 size-218 m-b-20">
-                                <input class="stext-111 cl2 plh3 size-116 p-lr-18" type="text" name="name" placeholder="Name *">
+                                <input class="stext-111 cl2 plh3 size-116 p-lr-18" id="cmtNameInput" type="text" name="name" placeholder="Name *">
                             </div>
 
                             <div class="bor19 size-218 m-b-20">
-                                <input class="stext-111 cl2 plh3 size-116 p-lr-18" type="text" name="email" placeholder="Email *">
+                                <input class="stext-111 cl2 plh3 size-116 p-lr-18" id="cmtEmailInput" type="text" name="email" placeholder="Email *">
                             </div>
 
-                            <button class="flex-c-m stext-101 cl0 size-125 bg3 bor2 hov-btn3 p-lr-15 trans-04">
+                            <button type="submit" class="flex-c-m stext-101 cl0 size-125 bg3 bor2 hov-btn3 p-lr-15 trans-04">
                                 Post Comment
                             </button>
                         </form>
@@ -697,6 +697,28 @@ $(document).ready(function() {
 </script>
 <!--===============================================================================================-->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+	// Comment form submission with SweetAlert
+	$(document).ready(function() {
+		$('#commentForm').on('submit', function(e) {
+			e.preventDefault();
+			
+			// Show thank you alert
+			swal({
+				title: "Thank You!",
+				text: "Thank you for your comment. We appreciate your feedback!",
+				icon: "success",
+				button: "OK"
+			}).then(function() {
+				// Clear the form fields after pressing OK
+				$('#cmtInput').val('');
+				$('#cmtNameInput').val('');
+				$('#cmtEmailInput').val('');
+			});
+		});
+	});
+</script>
 
 </body>
 </html>
