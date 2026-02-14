@@ -269,11 +269,6 @@ def product():
     random.shuffle(all_products)
     return render_template('product.html', products = all_products)
 
-@app.route('/product-detail')
-def product_detail():
-    # Sync cart for product detail page as well
-    get_current_user_cart()
-    return render_template('product-detail.html')
 
 @app.route('/shopping-cart')
 def shopping_cart():
