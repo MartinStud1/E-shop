@@ -41,8 +41,6 @@ def get_posts_by_tags(tag):
 
 
 
-
-
 def get_products_from_category(category):
     url = f'https://dummyjson.com/products/category/{category}'
     response = requests.get(url)
@@ -52,6 +50,8 @@ def get_products_from_category(category):
     else:
         return []
 
+
+
 def get_all_products_from_categories(categories):
     all_products = []
     for category in categories:
@@ -60,16 +60,13 @@ def get_all_products_from_categories(categories):
     return all_products
 
 def get_current_user_cart():
-    # Pokud je uživatel přihlášen, najdeme jeho košík v seznamu
     if 'email' in session:
         for user in registered_users:
             if user['email'] == session['email']:
-                # IMPORTANT: Set session['cart'] so templates can access it
                 session['cart'] = user['user_cart']
                 session.modified = True
                 return user['user_cart']
     
-    # Pokud není přihlášen, vrátíme (nebo vytvoříme) košík v session
     if 'cart' not in session:
         session['cart'] = []
     return session['cart']
@@ -114,20 +111,16 @@ app.secret_key = "tajnyklic"
 
 @app.context_processor
 def inject_cart_count():
-    # Tady se rozhoduje, co uvidí JS i HTML
     cart = []
     if 'email' in session:
-        # Pokud je v session email, MUSÍME brát košík z registered_users
         for user in registered_users:
             if user['email'] == session['email']:
                 cart = user['user_cart']
                 break
     else:
-        # Pokud není email, bereme anonymní session
         cart = session.get('cart', [])
 
     total_qty = sum(item.get('quantity', 0) for item in cart)
-    # Tohle posílá data do TVÝCH bublin a mini košíku
     return {
         "cart": cart,
         "cart_count": total_qty,
@@ -136,11 +129,9 @@ def inject_cart_count():
 
 @app.route('/')
 def index():
-    # Ensure session cart exists (templates access session.get('cart') directly)
     get_current_user_cart()
     return render_template('index.html', products = all_random_products)
 
-# --- REGISTRACE ---
 @app.route('/registration', methods=['GET', 'POST'])
 def registration():
     if request.method == 'POST':
@@ -149,21 +140,18 @@ def registration():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
-        # Kontrola, zda hesla sedí
         if password != confirm_password:
             return render_template('registration.html', error="Hesla se neshodují.")
-
-        # Kontrola, zda uživatel s tímto e-mailem už neexistuje
+        
         for user in registered_users:
             if user['email'] == email:
                 return render_template('registration.html', error="Uživatel s tímto e-mailem již existuje.")
 
-        # Přidání nového uživatele do seznamu (včetně jeho budoucího košíku)
         registered_users.append({
             "username": username,
             "email": email,
-            "password": generate_password_hash(password),  # Hash the password
-            "user_cart": []  # Každý uživatel má své pole pro košík
+            "password": generate_password_hash(password),  
+            "user_cart": []  
         })
 
         print(f"Nový uživatel: {username}, Celkem registrovaných: {len(registered_users)}")
@@ -173,12 +161,10 @@ def registration():
 
 @app.route('/logout')
 def logout():
-    # Smažeme jen konkrétní věci, ne celou session
     session.pop('username', None)
     session.pop('email', None)
     session.pop('cart_count', None)
     
-    # Důležité: inicializujeme prázdný košík pro anonyma
     session['cart'] = []
     
     return redirect(url_for('index'))
@@ -194,19 +180,14 @@ def login():
 
         for user in registered_users:
             if user['email'] == email and check_password_hash(user['password'], password):
-                # 1. Klasické přihlášení
                 session['username'] = user['username']
                 session['email'] = user['email']
                 
-                # 2. KLÍČOVÝ KROK: Vyčistíme anonymní košík ze session
-                # Tím zajistíme, že se minikošík začne řídit daty z registered_users
                 session.pop('cart', None)
                 
-                # 3. Aktualizujeme počitadlo podle skutečného obsahu uživatelova košíku
                 user_cart = user.get('user_cart', [])
                 session['cart_count'] = sum(item.get('quantity', 0) for item in user_cart)
                 
-                # Pro jistotu vynutíme uložení session
                 session.modified = True
                 
                 print(f"DEBUG: Login successful for {user['username']}, Cart count: {session['cart_count']}")
@@ -224,17 +205,14 @@ def about():
 @app.route('/blog')
 def blog():
     get_current_user_cart()
-    # slovník pro unikátní články podle id
     unique_posts = {}
 
     for tag in tags:
         posts = get_posts_by_tags(tag)
         for post in posts:
-        # pokud ještě tento id nemáme, přidáme
             if post['id'] not in unique_posts:
                 unique_posts[post['id']] = post
 
-    # převod na seznam unikátních článků
     final_posts = list(unique_posts.values())
     final_posts = random.sample(final_posts, min(len(final_posts), 5))
     return render_template('blog.html', posts = final_posts)
@@ -242,7 +220,6 @@ def blog():
 @app.route('/blog/<int:post_id>')
 def blog_detail(post_id):
     get_current_user_cart()
-    # Procházíme všechny tagy a hledáme post podle id
     unique_posts = {}
     for tag in tags:
         posts = get_posts_by_tags(tag)
@@ -263,8 +240,6 @@ def contact():
 
 @app.route('/product')
 def product():
-    # Ensure the current user's cart is synced into the session so templates
-    # that read `session.get('cart')` show the latest data (important after AJAX).
     get_current_user_cart()
     random.shuffle(all_products)
     return render_template('product.html', products = all_products)
@@ -273,7 +248,6 @@ def product():
 @app.route('/shopping-cart')
 def shopping_cart():
     cart = get_current_user_cart()
-    # Spočítáme celkovou cenu pro jistotu i tady
     total_price = sum(item.get('quantity', 0) * item.get('price', 0) for item in cart)
     return render_template('shopping-cart.html', cart=cart, total_price=total_price)
 
@@ -285,7 +259,6 @@ def add_to_cart(product_id):
 
     cart = get_current_user_cart()
 
-    # Logika přidání nebo navýšení množství
     for item in cart:
         if item['id'] == product_id:
             item['quantity'] += 1
@@ -343,7 +316,6 @@ def subtract_quantity(product_id):
 
 @app.route('/remove-from-cart/<int:product_id>')
 def remove_from_cart(product_id):
-    # Použijeme logiku, která pozná, jestli mazat u usera nebo v session
     if 'email' in session:
         for user in registered_users:
             if user['email'] == session['email']:
@@ -352,33 +324,30 @@ def remove_from_cart(product_id):
     else:
         session['cart'] = [item for item in session.get('cart', []) if item['id'] != product_id]
     
-    # Aktualizujeme globální počitadlo pro bublinu v navbaru
     cart = get_current_user_cart()
     session['cart_count'] = sum(item.get('quantity', 0) for item in cart)
     session.modified = True
     
     return redirect(url_for('shopping_cart'))
+
 @app.route('/checkout-process', methods=['POST'])
 def checkout_process():
     if 'email' in session:
-        # PŘIHLÁŠENÝ: Najdeme uživatele a vymažeme mu list
         for user in registered_users:
             if user['email'] == session['email']:
-                user['user_cart'] = [] # Totální reset
+                user['user_cart'] = [] 
                 break
     else:
-        # ANONYM: Vymažeme košík ze session
         session['cart'] = []
     
-    # Resetujeme i počítadlo v session pro bublinu
     session['cart_count'] = 0
     session.modified = True
     
     return jsonify({"success": True})
+
 @app.route('/remove-from-cart-ajax/<int:product_id>', methods=['POST'])
 def remove_from_cart_ajax(product_id):
-    # 1. Logika smazání je stejná jako u klasické verze
-    cart = []  # default to avoid UnboundLocalError if no user matches
+    cart = []  
     if 'email' in session:
         for user in registered_users:
             if user['email'] == session['email']:
@@ -395,7 +364,6 @@ def remove_from_cart_ajax(product_id):
     print(f"Removed product ID: {product_id}")
     print(f"Current user_cart: {cart}")
     
-    # 2. Výpočet celkového množství (tady byla ta chyba s 'item')
     total_qty = sum(i.get('quantity', 0) for i in cart)
     session['cart_count'] = total_qty
     

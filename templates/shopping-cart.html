@@ -285,7 +285,7 @@
 
                 {% if session.get('cart')|length == 0 %}
                 <li class="header-cart-item text-center">
-                    Košík je prázdný.
+                    Cart is empty.
                 </li>
                 {% endif %}
             </ul>
@@ -579,7 +579,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 <!--===============================================================================================-->
 <script src="{{ url_for('static', filename='vendor/sweetalert/sweetalert.min.js') }}"></script>
 <script>
-	// wishlist removed
 
 	$('.js-addcart-detail').each(function(){
 		var nameProduct = $(this).parent().parent().parent().parent().find('.js-name-detail').html();
@@ -605,11 +604,7 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 		})
 	});
 </script>
-<!--přidáno:-->
 <script>
-// ---------------------------
-// 1. Pomocná funkce pro aktualizaci bublin (data-notify)
-// ---------------------------
 function updateBadgeCount() {
     let totalQuantity = 0;
     document.querySelectorAll('.table_row .num-product').forEach(input => {
@@ -618,18 +613,14 @@ function updateBadgeCount() {
 
     const badges = document.querySelectorAll('.icon-header-noti');
     badges.forEach(badge => {
-        // Aktualizujeme jen ty bubliny, které mají v sobě nákupní košík
         if (badge.querySelector('.zmdi-shopping-cart')) {
             badge.setAttribute('data-notify', totalQuantity);
         }
     });
 }
 
-// ---------------------------
-// 2. Přepočítání jednoho řádku + celého cart
-// ---------------------------
 function updateRowTotal(row){
-    // Očištění textu od symbolu $ pro výpočet
+
     const priceText = row.querySelector('.price').textContent.replace('$', '').trim();
     const price = parseFloat(priceText);
     const quantity = parseInt(row.querySelector('.num-product').value);
@@ -638,7 +629,7 @@ function updateRowTotal(row){
 
     updateCartTotals();
     refreshMiniCartOptimized();
-    updateBadgeCount(); // Přidáno pro live update bubliny
+    updateBadgeCount(); 
 }
 
 function updateCartTotals(){
@@ -659,9 +650,6 @@ function updateCartTotals(){
     if(totalEl) totalEl.textContent = formattedTotal;
 }
 
-// ---------------------------
-// 3. Mini cart live update (OPRAVENO: AJAX pro trvalé smazání)
-// ---------------------------
 function refreshMiniCartOptimized() {
     let subtotal = 0;
     const miniCartUl = document.querySelector('.header-cart-wrapitem');
@@ -697,7 +685,6 @@ function refreshMiniCartOptimized() {
                 </div>`;
             miniCartUl.appendChild(li);
 
-            // AKTIVACE KŘÍŽKU V MINI-KOŠÍKU (Posílá fetch do Pythonu)
             li.querySelector('.remove-mini-cart').addEventListener('click', async (e) => {
                 e.preventDefault();
                 try {
@@ -705,16 +692,13 @@ function refreshMiniCartOptimized() {
                     const data = await res.json();
                     
                     if (data.success) {
-                        // Smažeme to z obou míst v HTML (pokud existují)
                         const mainRow = document.querySelector(`.table_row[data-id='${id}']`);
                         if(mainRow) mainRow.remove();
                         li.remove();
 
-                        // Přepočítáme zbytek
                         updateCartTotals();
                         refreshMiniCartOptimized();
                         
-                        // Aktualizujeme červenou bublinu
                         const badges = document.querySelectorAll('.icon-header-noti');
                         badges.forEach(badge => {
                             badge.setAttribute('data-notify', data.cart_quantity);
@@ -736,9 +720,7 @@ function refreshMiniCartOptimized() {
     if(headerTotalEl) headerTotalEl.textContent = 'Total: $' + subtotal.toFixed(2);
 }
 
-// ---------------------------
-// 4. Quantity plus / minus (AJAX)
-// ---------------------------
+
 document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(btn => {
     btn.addEventListener('click', async () => {
         const row = btn.closest('.table_row');
@@ -753,9 +735,8 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
             const data = await res.json();
             if(data.success){
                 input.value = data.quantity;
-                updateRowTotal(row); // Tato funkce volá updateCartTotals a refreshMiniCart
+                updateRowTotal(row); 
                 
-                // Aktualizace bubliny i při změně množství
                 const badges = document.querySelectorAll('.icon-header-noti');
                 badges.forEach(badge => {
                     badge.setAttribute('data-notify', data.cart_quantity);
@@ -767,9 +748,7 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
     });
 });
 
-// ---------------------------
-// 5. Remove button z hlavní tabulky (AJAX)
-// ---------------------------
+
 document.querySelectorAll('.remove-from-cart-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -799,11 +778,8 @@ document.querySelectorAll('.remove-from-cart-btn').forEach(btn => {
     });
 });
 
-// ---------------------------
-// Inicializace
-// ---------------------------
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Pro jistotu vyčistíme mini-košík před první synchronizací
     const miniCartUl = document.querySelector('.header-cart-wrapitem');
     if(miniCartUl) miniCartUl.innerHTML = '';
     
@@ -822,35 +798,35 @@ $(document).ready(function() {
             type: 'POST',
             success: function(response) {
                 if (response.success) {
-                    // 1. Clear the main cart table rows
+
                     document.querySelectorAll('.table_row').forEach(row => row.remove());
                     
-                    // 2. Clear the mini cart
+
                     const miniCartUl = document.querySelector('.header-cart-wrapitem');
                     if(miniCartUl) {
                         miniCartUl.innerHTML = '<li class="header-cart-item text-center">Your cart is empty.</li>';
                     }
                     
-                    // 3. Update cart totals to 0
+
                     const cartSubtotal = document.getElementById('cart-subtotal');
                     const cartTotal = document.getElementById('cart-total');
                     if(cartSubtotal) cartSubtotal.textContent = '0.00';
                     if(cartTotal) cartTotal.textContent = '0.00';
                     
-                    // 4. Update badge count
+
                     const badges = document.querySelectorAll('.icon-header-noti');
                     badges.forEach(badge => {
                         badge.setAttribute('data-notify', '0');
                     });
                     
-                    // 5. Update header total
+
                     const headerTotalEl = document.getElementById('header-cart-total');
                     if(headerTotalEl) headerTotalEl.textContent = 'Total: $0.00';
                     
-                    // 6. Show success alert
+
                     swal("Thank You!", "Your order has been placed successfully! Your cart has been emptied.", "success")
                     .then(() => {
-                        // Refresh page to make sure everything is in sync
+                 
                         window.location.reload();
                     });
                 }

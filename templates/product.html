@@ -299,7 +299,7 @@
     </li>
     {% endfor %}
     {% if session.get('cart')|length == 0 %}
-    <li class="header-cart-item text-center">Košík je prázdný.</li>
+    <li class="header-cart-item text-center">Cart is empty.</li>
     {% endif %}
 </ul>
 
@@ -638,16 +638,13 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 <script src="{{ url_for('static', filename='vendor/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
 <script>
 	$(document).ready(function() {
-    // --- 1. MODÁLNÍ OKNA (Opraveno proti problikávání) ---
     $('.js-show-modal1').on('click', function(e){
         e.preventDefault();
         var productId = $(this).data('product-id');
         var $modal = $('#modal-' + productId);
         
-        // Používáme čisté zobrazení bez animací, které dělaly neplechu
         $modal.show();
 
-        // Přepočítat Slick slider (aby se obrázky správně vykreslily)
         var $slick = $modal.find('.slick3');
         if ($slick.length > 0) {
             $slick.slick('setPosition');
@@ -660,20 +657,15 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
         }
     });
 
-	// wishlist removed
 
-	// --- 5. ODSTRANĚNÍ Z KOŠÍKU - AGRESIVNÍ VERZE ---
 $(document).on('click', '.remove-from-cart-btn, .remove-mini-cart', function(e) {
-    // 1. Totální stopka pro všechno ostatní
     e.preventDefault();
     e.stopImmediatePropagation(); 
     e.stopPropagation();
 
-    // 2. Najdeme ID všemi možnými způsoby
     var id = $(this).attr('data-id') || $(this).data('id') || $(this).closest('[data-id]').attr('data-id');
     
     if (!id) {
-        // Poslední záchrana: zkusíme najít id v URL odkazu
         var href = $(this).attr('href');
         if(href) {
             var parts = href.split('/');
@@ -681,11 +673,10 @@ $(document).on('click', '.remove-from-cart-btn, .remove-mini-cart', function(e) 
         }
     }
 
-    console.log("Pokus o smazání ID:", id); // Sleduj F12 konzoli
+    console.log("Pokus o smazání ID:", id); 
 
     if (!id || id === "#") return false;
 
-    // 3. AJAX
     $.ajax({
         url: '/remove-from-cart-ajax/' + id,
         type: 'POST',
@@ -696,14 +687,12 @@ $(document).on('click', '.remove-from-cart-btn, .remove-mini-cart', function(e) 
             }
         },
         error: function() {
-            // I když to hodí chybu, zkusíme refresh, jestli se to v Pythonu přesto nesmazalo
             window.location.reload();
         }
     });
 
     return false;
 });
-    // --- 3. PŘIDÁNÍ DO KOŠÍKU (AJAX + Alert + Refresh) ---
 $('.js-addcart-detail').on('click', async function(e) {
     e.preventDefault();
     const btn = this;
@@ -715,11 +704,9 @@ $('.js-addcart-detail').on('click', async function(e) {
         const data = await res.json();
 
         if (data.success) {
-            // Aktualizace červené bubliny hned
             const badges = document.querySelectorAll('.icon-header-noti');
             badges.forEach(badge => badge.setAttribute('data-notify', data.cart_quantity));
 
-            // Potvrzení a refresh, aby se přegeneroval boční mini-košík
             swal(nameProduct, "is added to cart !", "success").then(() => {
                 location.reload();
             });
@@ -729,7 +716,6 @@ $('.js-addcart-detail').on('click', async function(e) {
     }
 });
 
-// --- 3. PERFECT SCROLLBAR (Opraveno pro Home/Products) ---
 $('.js-pscroll').each(function(){
 		$(this).css('position','relative');
 		$(this).css('overflow','hidden');
@@ -744,17 +730,14 @@ $('.js-pscroll').each(function(){
 		})
 	});
 
-// Spustit při načtení
 initScrollbar();
 
-// KLÍČOVÝ KROK: Refresh scrollbaru, když uživatel klikne na ikonu košíku
 $('.js-show-cart').on('click', function() {
     setTimeout(function() {
         initScrollbar();
-    }, 100); // Počkáme 100ms, až se panel vysune a zviditelní
+    }, 100); 
 });
 
-// --- 5. LOGIKA KOŠÍKU (Live výpočty a AJAX mazání) ---
 
 function updateCartTotals() {
     let subtotal = 0;
@@ -769,7 +752,6 @@ function updateCartTotals() {
     
     const formattedTotal = '$ ' + subtotal.toFixed(2);
     
-    // Aktualizace všech polí s cenou (hlavní stránka i hlavička)
     ['cart-subtotal', 'cart-total', 'header-cart-total'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -778,7 +760,6 @@ function updateCartTotals() {
     });
 }
 
-// Plus / Mínus tlačítka
 document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(btn => {
     btn.addEventListener('click', async () => {
         const row = btn.closest('.table_row');
@@ -795,7 +776,6 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
                 const price = parseFloat(row.querySelector('.price').textContent.replace('$', ''));
                 row.querySelector('.total').textContent = '$ ' + (price * data.quantity).toFixed(2);
                 
-                // Aktualizace bubliny
                 const badges = document.querySelectorAll('.icon-header-noti');
                 badges.forEach(badge => badge.setAttribute('data-notify', data.cart_quantity));
                 
@@ -805,7 +785,6 @@ document.querySelectorAll('.btn-num-product-up, .btn-num-product-down').forEach(
     });
 });
 
-// Tuhle funkci tam prostě jen vlož jako text, klidně na konec skriptu
 function initScrollbar() {
     $('.js-pscroll').each(function(){
         $(this).css('position','relative');
@@ -820,7 +799,6 @@ function initScrollbar() {
 
 
 
-// Inicializace po načtení
 document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.table_row')) {
         updateCartTotals();
@@ -830,16 +808,13 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script>
 	$(document).ready(function() {
-    // Sledujeme input se jménem 'search-product'
     $('input[name="search-product"]').on('keyup', function() {
         var value = $(this).val().toLowerCase();
         var $grid = $('.isotope-grid');
 
         $grid.isotope({
             filter: function() {
-                // Najdeme název produktu uvnitř karty
                 var name = $(this).find('.js-name-b2').text().toLowerCase();
-                // Vrátíme true, pokud název obsahuje to, co píšeme
                 return name.indexOf(value) > -1;
             }
         });

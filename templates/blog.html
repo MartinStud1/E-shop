@@ -285,11 +285,10 @@
     </li>
     {% endfor %}
     {% if session.get('cart')|length == 0 %}
-    <li class="header-cart-item text-center">Košík je prázdný.</li>
+    <li class="header-cart-item text-center">Cart is empty</li>
     {% endif %}
 </ul>
 
-            <!-- Subtotal + Buttons -->
             <div class="w-full">
                 <div id="header-cart-total" class="header-cart-total w-full p-tb-40">
                     Total: ${{ "%.2f"|format(cart_total_price) }}
@@ -528,7 +527,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 <!--===============================================================================================-->
 <script src="{{ url_for('static', filename='vendor/sweetalert/sweetalert.min.js') }}"></script>
 <script>
-    // wishlist removed
 
 	$('.js-addcart-detail').each(function(){
 		var nameProduct = $(this).parent().parent().parent().parent().find('.js-name-detail').html();
@@ -556,7 +554,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 </script>
 <script>
 $(document).ready(function() {
-    // --- 1. AKTUALIZACE BUBLINY (ČERVENÉ ČÍSLO) ---
     function updateBadges(count) {
         const badges = document.querySelectorAll('.icon-header-noti');
         badges.forEach(badge => {
@@ -564,7 +561,6 @@ $(document).ready(function() {
         });
     }
 
-    // --- 2. PŘIDÁNÍ DO KOŠÍKU ---
     $('.js-addcart-detail').on('click', async function(e) {
         e.preventDefault();
         const btn = this;
@@ -586,23 +582,18 @@ $(document).ready(function() {
         }
     });
 
-    // --- 4. MAZÁNÍ Z MINI-KOŠÍKU (Důležité pro Blog/Home) ---
-    // Používáme delegaci (document.on), protože položky v košíku mohou vznikat dynamicky
     $(document).on('click', '.remove-mini-cart', async function(e) {
-    e.preventDefault(); // Zabrání odchodu na jinou stránku
+    e.preventDefault(); 
     
     const btn = this;
     const productId = btn.dataset.id; 
 
     try {
-        // 1. Pošleme požadavek na smazání do Pythonu
         const res = await fetch(`/remove-from-cart-ajax/${productId}`, { method: 'POST' });
         const data = await res.json();
 
         if (data.success) {
-            // 2. Místo složitého přepočítávání přes JS prostě stránku obnovíme
-            // location.reload() zajistí, že zůstaneš na stejné URL (např. /blog),
-            // ale Python znovu vygeneruje HTML se správnými cenami.
+
             location.reload();
         }
     } catch (error) {
@@ -610,7 +601,6 @@ $(document).ready(function() {
     }
 });
 
-    // --- 3. PERFECT SCROLLBAR ---
     $('.js-pscroll').each(function(){
         $(this).css({ 'position': 'relative', 'overflow': 'hidden' });
         var ps = new PerfectScrollbar(this, {

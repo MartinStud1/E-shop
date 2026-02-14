@@ -290,12 +290,11 @@
 
                 {% if session.get('cart')|length == 0 %}
                 <li class="header-cart-item text-center">
-                    Košík je prázdný.
+                    Cart is empty.
                 </li>
                 {% endif %}
             </ul>
 
-            <!-- Subtotal + Buttons -->
             <div class="w-full">
                 <div id="header-cart-total" class="header-cart-total w-full p-tb-40">
                     Total: ${{ "%.2f"|format(cart_total_price) }}
@@ -572,7 +571,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 <!--===============================================================================================-->
 <script src="{{ url_for('static', filename='vendor/sweetalert/sweetalert.min.js') }}"></script>
 <script>
-    // wishlist removed
 
 	$('.js-addcart-detail').each(function(){
 		var nameProduct = $(this).parent().parent().parent().parent().find('.js-name-detail').html();
@@ -600,17 +598,14 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 </script>
 <script>
 $(document).ready(function() {
-    // --- 1. AKTUALIZACE BUBLINY (ČERVENÉ ČÍSLO) ---
     function updateBadges(count) {
         $('.icon-header-noti').attr('data-notify', count);
     }
 
-    // --- 2. MAZÁNÍ Z MINI-KOŠÍKU (Verze pro Blog-detail) ---
     $(document).on('click', '.remove-mini-cart', async function(e) {
         e.preventDefault();
         e.stopImmediatePropagation(); 
 
-        // Získáme ID z data-id (ujisti se, že ho máš v HTML u křížku)
         const productId = $(this).data('id') || $(this).attr('data-id'); 
         
         if (!productId) {
@@ -623,8 +618,6 @@ $(document).ready(function() {
             const data = await res.json();
 
             if (data.success) {
-                // Žádné sessionStorage, prostě jen refresh
-                // Python znovu vykreslí stránku a košík bude v původním (zavřeném) stavu
                 location.reload();
             }
         } catch (error) {
@@ -633,7 +626,6 @@ $(document).ready(function() {
         }
     });
 
-    // --- 3. PŘIDÁNÍ DO KOŠÍKU ---
     $('.js-addcart-detail').on('click', async function(e) {
         e.preventDefault();
         const btn = this;
@@ -655,8 +647,6 @@ $(document).ready(function() {
         }
     });
 
-    // --- 4. PERFECT SCROLLBAR ---
-    // Necháme ho jen tady jednou, aby se to nehádalo
     $('.js-pscroll').each(function(){
         $(this).css({ 'position': 'relative', 'overflow': 'hidden' });
         var ps = new PerfectScrollbar(this, {
@@ -672,19 +662,16 @@ $(document).ready(function() {
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 <script>
-	// Comment form submission with SweetAlert
 	$(document).ready(function() {
 		$('#commentForm').on('submit', function(e) {
 			e.preventDefault();
 			
-			// Show thank you alert
 			swal({
 				title: "Thank You!",
 				text: "Thank you for your comment. We appreciate your feedback!",
 				icon: "success",
 				button: "OK"
 			}).then(function() {
-				// Clear the form fields after pressing OK
 				$('#cmtInput').val('');
 				$('#cmtNameInput').val('');
 				$('#cmtEmailInput').val('');
